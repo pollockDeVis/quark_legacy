@@ -6,10 +6,10 @@
 // Load Wi-Fi library
 #include <ESP8266WiFi.h>
 //#include <SoftwareSerial.h>
-//#define SERIALDEBUG
+#define SERIALDEBUG
 // Replace with your network credentials
-const char* ssid     = "dobiqueen";
-const char* password = "dobiqueen";
+const char* ssid     = "You definitely want me";
+const char* password = "tofunaan1629";
 
 // Set web server port number to 80
 WiFiServer server(80);
@@ -285,4 +285,3 @@ void switchOn(){
 pinMode(D10, OUTPUT );
 digitalWrite(D10, HIGH);  
 }
-

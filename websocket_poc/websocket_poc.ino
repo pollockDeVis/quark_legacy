@@ -23,7 +23,7 @@ WebSocketsClient webSocket;
 
 #define MESSAGE_INTERVAL 30000
 #define HEARTBEAT_INTERVAL 25000
-#define DEBUG_MESSAGES
+#define DEBUG_MESSAGES 1
 uint64_t messageTimestamp = 0;
 uint64_t heartbeatTimestamp = 0;
 bool isConnected = false;
@@ -36,13 +36,16 @@ void webSocketEvent(WStype_t type, uint8_t * payload, size_t length) {
 
     switch(type) {
         case WStype_DISCONNECTED:
-        
+           #if DEBUG_MESSAGES
             USE_SERIAL.printf("[WSc] Disconnected!\n");
+            #endif
             isConnected = false;
             break;
         case WStype_CONNECTED:
             {
+              #if DEBUG_MESSAGES
                 USE_SERIAL.printf("[WSc] Connected to url: %s\n",  payload);
+                #endif
                 isConnected = true;
 
           // send message to server when Connected
@@ -51,7 +54,10 @@ void webSocketEvent(WStype_t type, uint8_t * payload, size_t length) {
             }
             break;
         case WStype_TEXT:
+        #if DEBUG_MESSAGES
             USE_SERIAL.printf("[WSc] get text: %s\n", payload);
+            #endif
+            Serial.println("B");
            jsonString = (char*)payload;
            jsonReceived = true;
             //parse payload/save it to a variable
@@ -60,7 +66,9 @@ void webSocketEvent(WStype_t type, uint8_t * payload, size_t length) {
       // webSocket.sendTXT("message here");
             break;
         case WStype_BIN:
+        #if DEBUG_MESSAGES
             USE_SERIAL.printf("[WSc] get binary length: %u\n", length);
+            #endif
             hexdump(payload, length);
 
             // send data to server
@@ -72,9 +80,10 @@ void webSocketEvent(WStype_t type, uint8_t * payload, size_t length) {
 
 void setup() {
     // USE_SERIAL.begin(921600);
-    USE_SERIAL.begin(115200);
+    USE_SERIAL.begin(9600);
 
     //Serial.setDebugOutput(true);
+     #if DEBUG_MESSAGES
     USE_SERIAL.setDebugOutput(true);
 
     USE_SERIAL.println();
@@ -87,13 +96,15 @@ void setup() {
           delay(1000);
       }
   
-
-    WiFiMulti.addAP("Einstein", "unmc94ESS");
+      #endif
+    WiFiMulti.addAP("You know you want me", "tofunaan1629");
 
     //WiFi.disconnect();
     while(WiFiMulti.run() != WL_CONNECTED) {
         delay(100);
+         #if DEBUG_MESSAGES
         Serial.print("*");
+        #endif
     }
 
     webSocket.beginSocketIO("dobiqueen.digitalforest.io", 3000);
@@ -110,14 +121,17 @@ Serial.println("JSON OBJECT");
  JsonObject& root = jsonBuffer.parseObject(jsonString);
  
 if (!root.success()) {
+     #if DEBUG_MESSAGES
     Serial.println("parseObject() failed");
-    return;
+    #endif
+    //return;
   }
 
   int tokens = root["tokens"];
-
+ #if DEBUG_MESSAGES
   Serial.print("Received tokens");
   Serial.println(tokens);
+  #endif
   jsonReceived = false;
 }
 //    if(isConnected) {

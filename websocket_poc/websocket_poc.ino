@@ -13,6 +13,7 @@
 #include <WebSocketsClient.h>
 
 #include <Hash.h>
+#include <ArduinoJson.h>
 
 ESP8266WiFiMulti WiFiMulti;
 WebSocketsClient webSocket;
@@ -22,16 +23,20 @@ WebSocketsClient webSocket;
 
 #define MESSAGE_INTERVAL 30000
 #define HEARTBEAT_INTERVAL 25000
-
+#define DEBUG_MESSAGES
 uint64_t messageTimestamp = 0;
 uint64_t heartbeatTimestamp = 0;
 bool isConnected = false;
 
+char* jsonString;
+bool jsonReceived = false;
+StaticJsonBuffer<200> jsonBuffer;
 void webSocketEvent(WStype_t type, uint8_t * payload, size_t length) {
 
 
     switch(type) {
         case WStype_DISCONNECTED:
+        
             USE_SERIAL.printf("[WSc] Disconnected!\n");
             isConnected = false;
             break;
@@ -47,6 +52,9 @@ void webSocketEvent(WStype_t type, uint8_t * payload, size_t length) {
             break;
         case WStype_TEXT:
             USE_SERIAL.printf("[WSc] get text: %s\n", payload);
+           jsonString = (char*)payload;
+           jsonReceived = true;
+            //parse payload/save it to a variable
 
       // send message to server
       // webSocket.sendTXT("message here");
@@ -78,8 +86,9 @@ void setup() {
           USE_SERIAL.flush();
           delay(1000);
       }
+  
 
-    WiFiMulti.addAP("Tam Residence", "Home2018Aug");
+    WiFiMulti.addAP("Einstein", "unmc94ESS");
 
     //WiFi.disconnect();
     while(WiFiMulti.run() != WL_CONNECTED) {
@@ -95,20 +104,35 @@ void setup() {
 
 void loop() {
     webSocket.loop();
+if(jsonReceived){
 
-    if(isConnected) {
+Serial.println("JSON OBJECT");
+ JsonObject& root = jsonBuffer.parseObject(jsonString);
+ 
+if (!root.success()) {
+    Serial.println("parseObject() failed");
+    return;
+  }
 
-        uint64_t now = millis();
+  int tokens = root["tokens"];
 
-        if(now - messageTimestamp > MESSAGE_INTERVAL) {
-            messageTimestamp = now;
-            // example socket.io message with type "messageType" and JSON payload
-            webSocket.sendTXT("42[\"messageType\",{\"greeting\":\"hello\"}]");
-        }
-        if((now - heartbeatTimestamp) > HEARTBEAT_INTERVAL) {
-            heartbeatTimestamp = now;
-            // socket.io heartbeat message
-            webSocket.sendTXT("2");
-        }
-    }
+  Serial.print("Received tokens");
+  Serial.println(tokens);
+  jsonReceived = false;
+}
+//    if(isConnected) {
+//
+//        uint64_t now = millis();
+//
+//        if(now - messageTimestamp > MESSAGE_INTERVAL) {
+//            messageTimestamp = now;
+//            // example socket.io message with type "messageType" and JSON payload
+//            webSocket.sendTXT("42[\"messageType\",{\"greeting\":\"hello\"}]");
+//        }
+//        if((now - heartbeatTimestamp) > HEARTBEAT_INTERVAL) {
+//            heartbeatTimestamp = now;
+//            // socket.io heartbeat message
+//            webSocket.sendTXT("2");
+//        }
+//    }
 }

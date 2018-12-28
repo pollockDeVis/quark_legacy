@@ -124,6 +124,12 @@ void setup() {
 }
 
 void loop() {
+
+                 if(Serial.available()>0)
+                {
+                  char incomingByte = Serial.read();
+                   Serial.print(incomingByte);
+                  }
     webSocket.loop();
 if(jsonReceived){
 #if DEBUG_MESSAGES

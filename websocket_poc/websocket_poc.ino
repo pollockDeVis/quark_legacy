@@ -30,6 +30,7 @@ bool isConnected = false;
 
 char* jsonString;
 bool jsonReceived = false;
+int Tokens;
 StaticJsonBuffer<200> jsonBuffer;
 void webSocketEvent(WStype_t type, uint8_t * payload, size_t length) {
 
@@ -58,6 +59,8 @@ void webSocketEvent(WStype_t type, uint8_t * payload, size_t length) {
             USE_SERIAL.printf("[WSc] get text: %s\n", payload);
             #endif
             Serial.println("B");
+            Tokens = payload[55];
+            Serial.println(Tokens);
            jsonString = (char*)payload;
            jsonReceived = true;
             //parse payload/save it to a variable
@@ -116,8 +119,9 @@ void setup() {
 void loop() {
     webSocket.loop();
 if(jsonReceived){
-
+#if DEBUG_MESSAGES
 Serial.println("JSON OBJECT");
+#endif
  JsonObject& root = jsonBuffer.parseObject(jsonString);
  
 if (!root.success()) {

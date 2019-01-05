@@ -1,5 +1,5 @@
 #include <Arduino.h>
-
+#include <ArduinoJson.h>
 #include <ESP8266WiFi.h>
 #include <ESP8266WiFiMulti.h>
 
@@ -9,27 +9,44 @@
 
 ESP8266WiFiMulti WiFiMulti;
 SocketIoClient webSocket;
-
+bool websocketReceivedEvent = false;
+int rxTokens;
+//StaticJsonBuffer<1000> jsonBuffer;
+DynamicJsonBuffer  jsonBuffer(200);
 void event(const char * payload, size_t length) {
-  USE_SERIAL.printf("got message: %s\n", payload);
+
+  websocketReceivedEvent = true;
+  USE_SERIAL.printf("Size of  buff: %d\n", length);
+  
+  JsonObject& root = jsonBuffer.parseObject(payload);
+
+      if (!root.success()) 
+      {
+        Serial.println("parseObject() failed");
+        return;
+      }
+  rxTokens = root["tokens"];
+  
 }
 
 void setup() {
     USE_SERIAL.begin(115200);
+
+    
 
     USE_SERIAL.setDebugOutput(true);
 
     USE_SERIAL.println();
     USE_SERIAL.println();
     USE_SERIAL.println();
-
+    
       for(uint8_t t = 4; t > 0; t--) {
           USE_SERIAL.printf("[SETUP] BOOT WAIT %d...\n", t);
           USE_SERIAL.flush();
           delay(1000);
       }
 
-    WiFiMulti.addAP("Tam Residence", "Home2018Aug");
+    WiFiMulti.addAP("Einstein ", "unmc94ESS");
 
     while(WiFiMulti.run() != WL_CONNECTED) {
         delay(100);
@@ -43,4 +60,14 @@ void setup() {
 
 void loop() {
     webSocket.loop();
+
+    if (websocketReceivedEvent == true)
+    {
+      websocketReceivedEvent = false;
+       
+     
+      Serial.print("TOKENS  :");
+      Serial.println(rxTokens);
+    
+    }
 }

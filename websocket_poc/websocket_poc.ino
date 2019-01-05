@@ -2,17 +2,20 @@
 #include <ArduinoJson.h>
 #include <ESP8266WiFi.h>
 #include <ESP8266WiFiMulti.h>
-
+#include "tokenizer.h"
 #include <SocketIoClient.h>
 
 #define USE_SERIAL Serial
 
 ESP8266WiFiMulti WiFiMulti;
 SocketIoClient webSocket;
+
 bool websocketReceivedEvent = false;
 int rxTokens;
+
 //StaticJsonBuffer<1000> jsonBuffer;
 DynamicJsonBuffer  jsonBuffer(200);
+
 void event(const char * payload, size_t length) {
 
   websocketReceivedEvent = true;
@@ -68,6 +71,7 @@ void loop() {
      
       Serial.print("TOKENS  :");
       Serial.println(rxTokens);
+      tokenizer(rxTokens);
     
     }
 }

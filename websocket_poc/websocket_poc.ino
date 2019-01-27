@@ -4,6 +4,9 @@
 #include <ESP8266WiFiMulti.h>
 #include "tokenizer.h"
 #include <SocketIoClient.h>
+#include "RestClient.h"
+
+RestClient client = RestClient("dobiqueen.digitalforest.io/api/v1/cash-transactions");
 
 #define USE_SERIAL Serial
 
@@ -49,7 +52,7 @@ void setup() {
           delay(1000);
       }
 
-    WiFiMulti.addAP("Einstein ", "unmc94ESS");
+    WiFiMulti.addAP("Tam Residence", "Home2018Aug");
 
     while(WiFiMulti.run() != WL_CONNECTED) {
         delay(100);
@@ -60,7 +63,7 @@ void setup() {
     // use HTTP Basic Authorization this is optional remove if not needed
    // webSocket.setAuthorization("username", "password");
 }
-
+String response;
 void loop() {
     webSocket.loop();
 
@@ -74,4 +77,16 @@ void loop() {
       tokenizer(rxTokens);
     
     }
+
+///////////////RESTCLIENT/////////////////////////////////////
+response = "";
+  int statusCode = client.post("/tokens", 20, &response);
+  Serial.print("Status code from server: ");
+  Serial.println(statusCode);
+  Serial.print("Response body from server: ");
+  Serial.println(response);
+  delay(1000);
+
+
+
 }

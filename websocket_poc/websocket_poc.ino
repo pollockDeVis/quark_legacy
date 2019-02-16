@@ -19,7 +19,7 @@ DynamicJsonBuffer  jsonBuffer(200);
 void event(const char * payload, size_t length) {
 
   websocketReceivedEvent = true;
-  USE_SERIAL.printf("Size of  buff: %d\n", length);
+ // USE_SERIAL.printf("Size of  buff: %d\n", length);
   
   JsonObject& root = jsonBuffer.parseObject(payload);
 
@@ -33,11 +33,11 @@ void event(const char * payload, size_t length) {
 }
 
 void setup() {
-    USE_SERIAL.begin(115200);
+    USE_SERIAL.begin(9600);
 
     
 
-    USE_SERIAL.setDebugOutput(true);
+    USE_SERIAL.setDebugOutput(false);
 
     USE_SERIAL.println();
     USE_SERIAL.println();
@@ -49,7 +49,7 @@ void setup() {
           delay(1000);
       }
 
-    WiFiMulti.addAP("Einstein ", "unmc94ESS");
+    WiFiMulti.addAP("Cucian Hebat@unifi", "dobiqueen");
 
     while(WiFiMulti.run() != WL_CONNECTED) {
         delay(100);
@@ -62,6 +62,15 @@ void setup() {
 }
 
 void loop() {
+
+  
+    if(Serial.available()>0)
+    {
+      char incomingByte = Serial.read();
+      Serial.print(incomingByte);
+    }
+
+                  
     webSocket.loop();
 
     if (websocketReceivedEvent == true)
@@ -69,8 +78,8 @@ void loop() {
       websocketReceivedEvent = false;
        
      
-      Serial.print("TOKENS  :");
-      Serial.println(rxTokens);
+      //Serial.print("TOKENS  :");
+      //Serial.println(rxTokens);
       tokenizer(rxTokens);
     
     }

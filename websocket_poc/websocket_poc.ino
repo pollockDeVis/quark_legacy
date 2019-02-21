@@ -49,14 +49,14 @@ void setup() {
           delay(1000);
       }
 
-    WiFiMulti.addAP("Cucian Hebat@unifi", "dobiqueen");
+    WiFiMulti.addAP("You know you want me", "tofunaan1629");
 
     while(WiFiMulti.run() != WL_CONNECTED) {
         delay(100);
     }
 
     webSocket.on("transactions", event);
-    webSocket.begin("dobiqueen.digitalforest.io", 3000);
+    webSocket.begin("dobiqueen.digitalforest.io", 2052);
     // use HTTP Basic Authorization this is optional remove if not needed
    // webSocket.setAuthorization("username", "password");
 }

@@ -43,13 +43,16 @@ DynamicJsonBuffer  jsonBuffer(200);
 void event(const char * payload, size_t length) {
 
   websocketReceivedEvent = true;
- // USE_SERIAL.printf("Size of  buff: %d\n", length);
-  
+  #if SERIALDEBUG
+  USE_SERIAL.printf("Size of  buff: %d\n", length);
+  #endif
   JsonObject& root = jsonBuffer.parseObject(payload);
 
       if (!root.success()) 
       {
+        #if SERIALDEBUG
         Serial.println("parseObject() failed");
+        #endif
         return;
       }
   rxTokens = root["tokens"];
@@ -96,9 +99,7 @@ void setup() {
   Serial.println(WiFi.localIP());
 #endif
     
-    char* receivedString = getOauthToken();
-    String receivedToken = extractOauthToken(receivedString);
-    postCashTransaction(receivedToken, 13);
+
     //Serial.println(receivedToken);
     
     webSocket.on("transactions", event);
@@ -114,7 +115,10 @@ void loop() {
     {
       char incomingByte = Serial.read();
         Serial.println(incomingByte);
-      
+      int cashValue = detokenizer(incomingByte);
+      if (cashValue > 0){
+        postCashTransaction(cashValue);
+      }
     }
 
                   
@@ -138,21 +142,26 @@ char* getOauthToken()
 {
   
   WiFiClientSecure client;
+  #if SERIALDEBUG
   Serial.print("connecting to ");
   Serial.println(host);
-
   Serial.printf("Using fingerprint '%s'\n", fingerprint);
+  #endif
+  
   client.setFingerprint(fingerprint);
 
   if (!client.connect(host, httpsPort)) {
+    #if SERIALDEBUG
     Serial.println("connection failed");
-//    return;
+    #endif
+    return "X";
   }
 
   String token_url = "/api/v1/oauth/token";
+  #if SERIALDEBUG
   Serial.print("requesting URL: ");
   Serial.println(token_url);
-  
+  #endif 
   DynamicJsonBuffer jsonBuffer;
   
   JsonObject& root = jsonBuffer.createObject();
@@ -171,14 +180,18 @@ char* getOauthToken()
                      "\r\n\r\n" + buffer;
 
   client.println(requestBody);
+  #if SERIALDEBUG
   Serial.println(requestBody);
   Serial.println("request sent");
+  #endif 
   String  line = client.readStringUntil('}'); //readString() is significantly slow
 //  char* pch;
 //  pch = strchr(line, '{');
   line = line + '}';
+  #if SERIALDEBUG
        Serial.println(line);
        Serial.print("BRACKET STARTS at");
+       #endif 
        int headcount = 0;
        int tailcount = 0;
        int arraysize = 0;
@@ -196,8 +209,11 @@ char* getOauthToken()
         tailcount++;
         if (line[tailcount] == '}') break;
        }
+       #if SERIALDEBUG
         Serial.println(headcount);
         Serial.println(tailcount);
+        #endif 
+        
         arraysize = tailcount-headcount + 1;
         char tempBufferforJSON[arraysize];
         for (int counter = headcount; counter < tailcount+1; counter++){
@@ -218,7 +234,9 @@ String extractOauthToken(char* stringobject){
 
       if (!root.success()) 
       {
+        #if SERIALDEBUG
         Serial.println("parseObject() failed");
+        #endif 
         //return;
       }
   String access_token = root["access_token"];
@@ -231,21 +249,26 @@ String extractOauthToken(char* stringobject){
 void postCashTransaction(String access_token, int token){
 
   WiFiClientSecure client;
+  #if SERIALDEBUG
   Serial.print("connecting to ");
   Serial.println(host);
-
+  #endif 
+#if SERIALDEBUG
   Serial.printf("Using fingerprint '%s'\n", fingerprint);
+  #endif 
   client.setFingerprint(fingerprint);
 
   if (!client.connect(host, httpsPort)) {
+    #if SERIALDEBUG
     Serial.println("connection failed");
+    #endif 
 //    return;
   }
 
-  
+  #if SERIALDEBUG
   Serial.print("requesting URL: ");
   Serial.println(cash_url);
-  
+  #endif 
   DynamicJsonBuffer jsonBuffer;
   
   JsonObject& root = jsonBuffer.createObject();
@@ -265,7 +288,43 @@ void postCashTransaction(String access_token, int token){
                      "\r\n\r\n" + buffer; 
 
 client.println(requestBody2);
+#if SERIALDEBUG
 Serial.println(requestBody2);
+#endif
  String  line2 = client.readStringUntil('}'); //readString() is significantly slow
+ #if SERIALDEBUG
        Serial.println(line2);
+       #endif
+}
+int detokenizer(char Cashsignal)
+{
+  if(Cashsignal == '@')
+  {
+    return 1;
+  }
+  else if(Cashsignal == 'B')
+  {
+    return 5;
+  }
+  else if(Cashsignal == 'C')
+  {
+    return 10;
+  }
+  else if(Cashsignal == 'F')
+  {
+    return 20;
+  }
+  else if(Cashsignal == 'D')
+  {
+    return 50;
+  }
+  else{
+    return 0;
+  }
+}
+
+void postCashTransaction(int cash){
+      char* receivedString = getOauthToken();
+    String receivedToken = extractOauthToken(receivedString);
+    postCashTransaction(receivedToken, cash);
 }

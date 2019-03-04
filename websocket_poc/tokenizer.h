@@ -1,8 +1,8 @@
-#define RM50 55
-#define RM20 21
-#define RM10 10
-#define RM5 5
-#define RM1 1
+#define RM50 55   //D
+#define RM20 21   //F
+#define RM10 10   //C
+#define RM5 5     //B
+#define RM1 1     //@
 
 void tokenizer(int tokens)
 {

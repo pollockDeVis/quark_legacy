@@ -44,15 +44,16 @@ void setup() {
     USE_SERIAL.println();
     
       for(uint8_t t = 4; t > 0; t--) {
-          USE_SERIAL.printf("[SETUP] BOOT WAIT %d...\n", t);
+        //  USE_SERIAL.printf("[SETUP] BOOT WAIT %d...\n", t);
           USE_SERIAL.flush();
           delay(1000);
       }
 
-    WiFiMulti.addAP("You know you want me", "tofunaan1629");
+    WiFiMulti.addAP("THREE BROTHERS", "hola1234");
 
     while(WiFiMulti.run() != WL_CONNECTED) {
         delay(100);
+       // Serial.println(".");
     }
 
     webSocket.on("transactions", event);
@@ -67,7 +68,13 @@ void loop() {
     if(Serial.available()>0)
     {
       char incomingByte = Serial.read();
-      Serial.print(incomingByte);
+      if(incomingByte == '>'){
+        Serial.println("coin present");
+      }
+      else{
+        Serial.println("coin finished");
+        Serial.println(incomingByte);
+      }
     }
 
                   

@@ -8,7 +8,7 @@
 #include <WiFiClientSecure.h>
 
 #define USE_SERIAL Serial
-
+#define SOCKETIOCLIENT_DEBUG
 ESP8266WiFiMulti WiFiMulti;
 SocketIoClient webSocket;
 
@@ -29,8 +29,8 @@ const char* host = "dobiqueen.digitalforest.io";
 const int webSocketPort = 2052;
 const int httpsPort = 443;
 
-const int   client_id = 1;
-const char* client_secret = "0KCsioBv1YQHVco8vtemlq2UfGEQj4k1m6byLaIQ";
+const int   client_id = 2;
+const char* client_secret = "xj5CtbPW7LNXOE5AvwY7BUGgfjJ0HAH9fA2gBYMe";
 
 String token_url = "/api/v1/oauth/token";
 String cash_url = "/api/v1/cash-transactions";
@@ -103,9 +103,12 @@ void setup() {
     //Serial.println(receivedToken);
     
     webSocket.on("transactions", event);
-    webSocket.begin(host, webSocketPort);
+    //webSocket.begin(host, webSocketPort);
+     webSocket.begin(host);
     // use HTTP Basic Authorization this is optional remove if not needed
-    // webSocket.setAuthorization("username", "password");
+//char* client_id_char[20];
+
+webSocket.setAuthorization("DB000001", "123456");
 }
 
 void loop() {

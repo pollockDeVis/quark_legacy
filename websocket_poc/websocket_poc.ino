@@ -4,7 +4,6 @@
 #include <ESP8266WiFiMulti.h>
 #include "tokenizer.h"
 #include <SocketIoClient.h>
-//#include <ESP8266HTTPClient.h>
 #include <WiFiClientSecure.h>
 
 #define USE_SERIAL Serial
@@ -32,16 +31,39 @@ const int httpsPort = 443;
 const int   client_id = 1;
 const char* client_secret = "0KCsioBv1YQHVco8vtemlq2UfGEQj4k1m6byLaIQ";
 
+const char* TERMINAL = "DB000001";
+const char* TERMINAL_PASSWORD = "123456";
+
 String token_url = "/api/v1/oauth/token";
 String cash_url = "/api/v1/cash-transactions";
 
 const char fingerprint[] PROGMEM = "a8 0e 9c 81 2a a8 e3 0f e8 3b f5 e6 4c 73 7c 07 a4 e7 cc e5";
 
 //StaticJsonBuffer<1000> jsonBuffer;
-DynamicJsonBuffer  jsonBuffer(200);
+//DynamicJsonBuffer  jsonBuffer(200);
+
+void connectEvent(const char * payload, size_t length)
+{
+  #if SERIALDEBUG
+  Serial.println("EMITTING WEBSOCKETS");
+  Serial.println("SENDING AUTHORIZATION WEBSOCKET");
+  #endif
+  
+  DynamicJsonBuffer jsonBuffer;
+  
+  JsonObject& root = jsonBuffer.createObject();
+  root["username"] = TERMINAL;
+  root["password"] = TERMINAL_PASSWORD;
+
+  int JSONlength = root.measureLength();
+  char buffer[JSONlength+1];
+  root.printTo(buffer, sizeof(buffer));
+  webSocket.emit("authentication", buffer);
+   
+}
 
 void event(const char * payload, size_t length) {
-
+  DynamicJsonBuffer  jsonBuffer(200);
   websocketReceivedEvent = true;
   #if SERIALDEBUG
   USE_SERIAL.printf("Size of  buff: %d\n", length);
@@ -101,11 +123,9 @@ void setup() {
     
 
     //Serial.println(receivedToken);
-    
-    webSocket.on("transactions", event);
+    webSocket.on("connect", connectEvent);
+    webSocket.on("transaction", event);
     webSocket.begin(host, webSocketPort);
-    // use HTTP Basic Authorization this is optional remove if not needed
-    // webSocket.setAuthorization("username", "password");
 }
 
 void loop() {

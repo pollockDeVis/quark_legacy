@@ -6,48 +6,49 @@
 #include <SocketIoClient.h>
 #include <WiFiClientSecure.h>
 
-#define USE_SERIAL Serial
 
-ESP8266WiFiMulti WiFiMulti;
-SocketIoClient webSocket;
 
+/********************CHANGE THE PARAMS BELOW BEFORE INSTALLATION *****************************************************************************/
+//QUARK PARAMETERS
+const char* TERMINAL    PROGMEM = "DB000001";
+const int   TERMINAL_ID PROGMEM = 1;
+const char* TERMINAL_PASSWORD  PROGMEM = "123456";
+const char* FIRMWARE_VERSION = "1.0.0"; 
+const char* HARDWARE_VERSION = "1.0.0";
+
+//WIFI CREDENTIALS
+const char* ssid PROGMEM = "THREE BROTHERS";
+const char* password PROGMEM = "hola1234";
+
+
+
+/********************CAUTION: DO NOT CHANGE. *****************************************************************************/
+
+//SERVER DETAILS
+const char* host  PROGMEM = "dobiqueen.digitalforest.io";
+//WEBSOCKET PARAMETERS
+const int webSocketPort = 2052;
 bool websocketReceivedEvent = false;
 bool successfulTxn = false;
-//Websocket Incoming Parameters
 int rxTokens;
 int WS_txID;
 int WS_terminalID;
-//Websocket Incoming Parameters
 
-#ifndef STASSID
-#define STASSID "THREE BROTHERS"
-#define STAPSK  "hola1234"
-#endif
 
-#define SERIALDEBUG 1
-
-const char* ssid = STASSID;
-const char* password = STAPSK;
-
-const char* host = "dobiqueen.digitalforest.io";
-const int webSocketPort = 2052;
+//HTTPS REQUEST CREDENTIALS
 const int httpsPort = 443;
+const char fingerprint[] PROGMEM = "a8 0e 9c 81 2a a8 e3 0f e8 3b f5 e6 4c 73 7c 07 a4 e7 cc e5";
 
 //OAUTH ACCESS CREDENTIALS
 const int client_id_password_grant = 2;
-const char* client_secret_password_grant = "xj5CtbPW7LNXOE5AvwY7BUGgfjJ0HAH9fA2gBYMe";
-//char* access_token_type = NULL;
-//OAUTH ACCESS CREDENTIALS
+const char* client_secret_password_grant  PROGMEM = "xj5CtbPW7LNXOE5AvwY7BUGgfjJ0HAH9fA2gBYMe";
 
-const char* TERMINAL = "DB000001";
-const char* TERMINAL_PASSWORD = "123456";
+/***************************************************************************************************************/
+#define USE_SERIAL Serial
+#define SERIALDEBUG 1
 
-String token_url = "/api/v1/oauth/token";
-String cash_url = "/api/v1/cash-transactions";
-String transaction_approval_url = "/api/v1/transactions/" ; // This needs to go in Flash/ Local variable
-
-const char fingerprint[] PROGMEM = "a8 0e 9c 81 2a a8 e3 0f e8 3b f5 e6 4c 73 7c 07 a4 e7 cc e5";
-
+ESP8266WiFiMulti WiFiMulti;
+SocketIoClient webSocket;
 
 void connectEvent(const char * payload, size_t length)
 {
@@ -175,6 +176,8 @@ void loop() {
     Serial.print("TOKENS  :");
     Serial.println(rxTokens);
 #endif
+
+    //CHECK TERMINAL ID #TODO
     tokenizer(rxTokens);
 
   if(successfulTxn)
@@ -191,6 +194,7 @@ void loop() {
 }
 char* getOauthToken()
 {
+  String token_url   = "/api/v1/oauth/token";
 
   WiFiClientSecure client;
 #if SERIALDEBUG
@@ -307,6 +311,7 @@ String extractOauthToken(char* stringobject) {
 void patchTransactionApproval(String access_token)
 {
   WiFiClientSecure client;
+  String transaction_approval_url  = "/api/v1/transactions/" ; 
   client.setFingerprint(fingerprint);
 #if SERIALDEBUG
   Serial.println("PATCH REQUEST");
@@ -354,6 +359,7 @@ void patchTransactionApproval(String access_token)
 void postCashTransaction(String access_token, int token) {
 
   WiFiClientSecure client;
+  String cash_url   = "/api/v1/cash-transactions";
 #if SERIALDEBUG
   Serial.print("connecting to ");
   Serial.println(host);

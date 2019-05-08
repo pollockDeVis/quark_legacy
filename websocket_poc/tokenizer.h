@@ -5,6 +5,7 @@
 #define RM1 1     //@
 
 extern bool successfulTxn;
+
 void tokenizer(int tokens)
 {
   while (tokens > 0)
@@ -14,7 +15,6 @@ void tokenizer(int tokens)
     if(tokens >= RM50)
     {
       TOKEN_SYMBOL = "D";
-     // Serial.println("D");
       tokens = tokens - 55;
     }
     else if (tokens >= RM20)

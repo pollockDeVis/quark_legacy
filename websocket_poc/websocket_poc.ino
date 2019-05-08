@@ -8,7 +8,6 @@
 #include <WiFiClientSecure.h>
 
 
-
 /********************CHANGE THE PARAMS BELOW BEFORE INSTALLATION *****************************************************************************/
 //QUARK PARAMETERS
 const char* TERMINAL    PROGMEM = "DB000001";
@@ -22,10 +21,9 @@ const char* ssid PROGMEM = "THREE BROTHERS";
 const char* password PROGMEM = "hola1234";
 
 //DEBUG
-#define SERIALDEBUG 0
+#define SERIALDEBUG 0 //WEBSOCKETS DEBUG. CHANGE VALUE TO 1 TO TURN IN ON
+
 /********************CAUTION: DO NOT CHANGE. *****************************************************************************/
-
-
 //WEBSOCKET PARAMETERS
 const int webSocketPort = 2052;
 bool websocketReceivedEvent = false;
@@ -33,8 +31,6 @@ bool successfulTxn = false;
 int rxTokens;
 int WS_txID;
 int WS_terminalID;
-
-
 
 /***************************************************************************************************************/
 #define USE_SERIAL Serial
@@ -46,8 +42,7 @@ SocketIoClient webSocket;
 void connectEvent(const char * payload, size_t length)
 {
 #if SERIALDEBUG
-  Serial.println("EMITTING WEBSOCKETS");
-  Serial.println("SENDING AUTHORIZATION WEBSOCKET");
+  Serial.println("WEBSOCKETS CONNECTING");
 #endif
 
   DynamicJsonBuffer jsonBuffer;
@@ -98,90 +93,96 @@ void event(const char * payload, size_t length) {
 
 }
 
-void setup() {
+void setup() 
+{
   USE_SERIAL.begin(9600);
-
-
-
   USE_SERIAL.setDebugOutput(false);
-#if SERIALDEBUG
-  USE_SERIAL.println();
-  USE_SERIAL.println();
-  USE_SERIAL.println();
+  pinMode(0, INPUT); // D0 Pin
+  uint8_t pinVal = digitalRead(0);
+  if( pinVal == 0)
+  {
+    Serial.printf("\r\nTERMINAL: %s\r\nTERMINAL_ID: %d\r\nFIRMWARE_VERSION: %s\r\nHARDWARE_VERSION: %s", 
+    TERMINAL, TERMINAL_ID, FIRMWARE_VERSION, HARDWARE_VERSION);
+  }
 
-
-  Serial.print("Connecting to WiFi");
-  Serial.println(ssid);
-#endif
-
-  for (uint8_t t = 4; t > 0; t--) {
-#if SERIALDEBUG
-    USE_SERIAL.printf("[SETUP] BOOT WAIT %d...\n", t);
-#endif
+/*******WIFI SETUP********************************************************************/  
+  #if SERIALDEBUG
+    USE_SERIAL.println();
+    USE_SERIAL.println();
+    USE_SERIAL.println();
+    Serial.print("Connecting to WiFi");
+    Serial.println(ssid);
+  #endif
+  for (uint8_t t = 4; t > 0; t--) 
+  {
+    #if SERIALDEBUG
+      USE_SERIAL.printf("[SETUP] BOOT WAIT %d...\n", t);
+    #endif
     USE_SERIAL.flush();
     delay(1000);
   }
-
   WiFiMulti.addAP(ssid, password);
-
-  while (WiFiMulti.run() != WL_CONNECTED) {
+  while (WiFiMulti.run() != WL_CONNECTED) 
+  {
     delay(100);
-#if SERIALDEBUG
-    Serial.println(".");
-#endif
+    #if SERIALDEBUG
+      Serial.println(".");
+    #endif
   }
-
-#if SERIALDEBUG
-  Serial.println("");
-  Serial.println("WiFi connected");
-  Serial.println("IP address: ");
-  Serial.println(WiFi.localIP());
-#endif
-
-
-  //Serial.println(receivedToken);
+  #if SERIALDEBUG
+    Serial.println("");
+    Serial.println("WiFi connected");
+    Serial.println("IP address: ");
+    Serial.println(WiFi.localIP());
+  #endif
+/*******************************WEBSOCKET SETUP**************************************************************/
   webSocket.on("connect", connectEvent);
   webSocket.on("transaction", event);
   webSocket.begin(host, webSocketPort);
-}
+  
+} //end setup
 
-void loop() {
-
-
+void loop() 
+{
+/***********************CHECK CASH TXNS**************************************************************/
   if (Serial.available() > 0)
   {
     char incomingByte = Serial.read();
     Serial.println(incomingByte);
     int cashValue = detokenizer(incomingByte);
-    if (cashValue > 0) {
+    if (cashValue > 0) 
+    {
       postCashTransaction(cashValue, TERMINAL, TERMINAL_PASSWORD);
     }
   }
 
-
   webSocket.loop();
 
+/************CHECK ONLINE TXNS******************************************************************/
   if (websocketReceivedEvent == true)
   {
     websocketReceivedEvent = false;
 
-#if SERIALDEBUG
-    Serial.print("TOKENS  :");
-    Serial.println(rxTokens);
-#endif
+    #if SERIALDEBUG
+      Serial.print("TOKENS  :");
+      Serial.println(rxTokens);
+    #endif
 
     //CHECK TERMINAL ID #TODO
-    tokenizer(rxTokens);
+    if(WS_terminalID == TERMINAL_ID)
+    {
+      tokenizer(rxTokens);
+    }
 
-  if(successfulTxn)
-  {
-  #if SERIALDEBUG   
-    Serial.print("Boolean is True ");
-    Serial.println(" Making the flag false");
-  #endif
-   patchConfirmTransaction(TERMINAL, TERMINAL_PASSWORD, WS_txID);
-   successfulTxn = false;
-
+    if(successfulTxn)
+    {
+      #if SERIALDEBUG   
+        Serial.print("Boolean is True ");
+        Serial.println(" Making the flag false");
+      #endif
+      patchConfirmTransaction(TERMINAL, TERMINAL_PASSWORD, WS_txID);
+      successfulTxn = false;
+    }
   }
-}
-}
+  
+}// end Loop

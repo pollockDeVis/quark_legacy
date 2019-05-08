@@ -1,6 +1,9 @@
+#define SERIALDEBUG 0 //HTTPS DEBUG. CHANGE VALUE TO 1 TO TURN IN ON
+bool oauthFail = false;
+/********************CAUTION: DO NOT CHANGE. *****************************************************************************/
+
 //SERVER DETAILS
 const char* host  PROGMEM = "dobiqueen.digitalforest.io";
-
 
 //HTTPS REQUEST CREDENTIALS
 const int httpsPort = 443;
@@ -9,6 +12,7 @@ const char fingerprint[] PROGMEM = "a8 0e 9c 81 2a a8 e3 0f e8 3b f5 e6 4c 73 7c
 //OAUTH ACCESS CREDENTIALS
 const int client_id_password_grant = 2;
 const char* client_secret_password_grant  PROGMEM = "xj5CtbPW7LNXOE5AvwY7BUGgfjJ0HAH9fA2gBYMe";
+/****************************************************************************************************************/
 
 
 char* getOauthToken(const char* _terminal, const char*  _tPassword)
@@ -105,7 +109,6 @@ char* getOauthToken(const char* _terminal, const char*  _tPassword)
 }
 
 
-
 String extractOauthToken(char* stringobject) {
 
   DynamicJsonBuffer  jsonBuffer(3000);
@@ -113,6 +116,7 @@ String extractOauthToken(char* stringobject) {
 
   if (!root.success())
   {
+    oauthFail = true;
 #if SERIALDEBUG
     Serial.println("parseObject() failed");
 #endif
@@ -125,7 +129,6 @@ String extractOauthToken(char* stringobject) {
 #endif
   return access_token;
 }
-
 
 
 void patchTransactionApproval(String access_token, int _WS_txID)
@@ -169,8 +172,10 @@ void patchTransactionApproval(String access_token, int _WS_txID)
                        "\r\n\r\n" + buffer;
 
   client.println(requestBody);
+   String  line = client.readStringUntil('}'); //readString() is significantly slow
 #if SERIALDEBUG
   Serial.println("PATCH REQ SENT");
+  Serial.println(line);
 #endif
 
 }
@@ -232,6 +237,13 @@ void postCashTransaction(String access_token, int token) {
 void postCashTransaction(int cash, const char* _terminal, const char* _tPassword) {
   char* receivedString = getOauthToken(_terminal, _tPassword);
   String receivedToken = extractOauthToken(receivedString);
+  //oauth parsing fails sometimes. This is a failsafe test
+  if(oauthFail)
+  {
+    receivedString = getOauthToken(_terminal, _tPassword);
+    receivedToken = extractOauthToken(receivedString);
+    oauthFail = false;
+  }
   postCashTransaction(receivedToken, cash);
 }
 
@@ -239,6 +251,13 @@ void patchConfirmTransaction(const char* _terminal, const char* _tPassword, int 
 {
   char* receivedString = getOauthToken(_terminal, _tPassword);
   String receivedToken = extractOauthToken(receivedString);
+  //oauth parsing fails sometimes. This is a failsafe test
+  if(oauthFail)
+  {
+    receivedString = getOauthToken(_terminal, _tPassword);
+    receivedToken = extractOauthToken(receivedString);
+    oauthFail = false;
+  }
   patchTransactionApproval(receivedToken, _WS_txID);
   
 }

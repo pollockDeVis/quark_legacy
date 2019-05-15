@@ -17,8 +17,11 @@ const char* FIRMWARE_VERSION = "1.0.0";
 const char* HARDWARE_VERSION = "1.0.0";
 
 //WIFI CREDENTIALS
-const char* ssid PROGMEM = "THREE BROTHERS";
-const char* password PROGMEM = "hola1234";
+const char* ssid PROGMEM = "dobiqueen";
+const char* password PROGMEM = "dobiqueen";
+const unsigned long wifi_timeout PROGMEM = 10000; // 10 seconds waiting for connecting to wifi
+const unsigned long wifi_reconnect_time PROGMEM = 120000; // 2 min retrying
+unsigned long wifi_last_connected_time = millis();
 
 //DEBUG
 #define SERIALDEBUG 0 //WEBSOCKETS DEBUG. CHANGE VALUE TO 1 TO TURN IN ON
@@ -106,35 +109,7 @@ void setup()
   }
 
 /*******WIFI SETUP********************************************************************/  
-  #if SERIALDEBUG
-    USE_SERIAL.println();
-    USE_SERIAL.println();
-    USE_SERIAL.println();
-    Serial.print("Connecting to WiFi");
-    Serial.println(ssid);
-  #endif
-  for (uint8_t t = 4; t > 0; t--) 
-  {
-    #if SERIALDEBUG
-      USE_SERIAL.printf("[SETUP] BOOT WAIT %d...\n", t);
-    #endif
-    USE_SERIAL.flush();
-    delay(1000);
-  }
-  WiFiMulti.addAP(ssid, password);
-  while (WiFiMulti.run() != WL_CONNECTED) 
-  {
-    delay(100);
-    #if SERIALDEBUG
-      Serial.println(".");
-    #endif
-  }
-  #if SERIALDEBUG
-    Serial.println("");
-    Serial.println("WiFi connected");
-    Serial.println("IP address: ");
-    Serial.println(WiFi.localIP());
-  #endif
+  connectWifi();
 /*******************************WEBSOCKET SETUP**************************************************************/
   webSocket.on("connect", connectEvent);
   webSocket.on("transaction", event);
@@ -147,42 +122,107 @@ void loop()
 /***********************CHECK CASH TXNS**************************************************************/
   if (Serial.available() > 0)
   {
+     #if SERIALDEBUG
+      Serial.print("Serial Availability: ");
+      Serial.println(Serial.available());
+    #endif
     char incomingByte = Serial.read();
     Serial.println(incomingByte);
     int cashValue = detokenizer(incomingByte);
     if (cashValue > 0) 
     {
-      postCashTransaction(cashValue, TERMINAL, TERMINAL_PASSWORD);
+      if(wifiStatusCheck() == true) //create a variable offline for TXN
+        postCashTransaction(cashValue, TERMINAL, TERMINAL_PASSWORD);
     }
   }
-
-  webSocket.loop();
-
-/************CHECK ONLINE TXNS******************************************************************/
-  if (websocketReceivedEvent == true)
+    
+  if(wifiStatusCheck() == false)
   {
-    websocketReceivedEvent = false;
-
+    if((millis() - wifi_last_connected_time) > wifi_reconnect_time) // reconnects every 2 minutes || Serial is checked so that it doesn't go into reconnecting the wifi when transaction is taking place
+    {
+      wifi_last_connected_time = millis(); // Readjusting the timer so that it doesn't keep on reconnecting on every loop after 2 min has elapsed
     #if SERIALDEBUG
-      Serial.print("TOKENS  :");
-      Serial.println(rxTokens);
+      Serial.print("Connection Lost, Reconnecting");
     #endif
-
-    //CHECK TERMINAL ID #TODO
-    if(WS_terminalID == TERMINAL_ID)
-    {
-      tokenizer(rxTokens);
+      connectWifi();
     }
-
-    if(successfulTxn)
+  }else
+  {
+    webSocket.loop();
+  
+/************CHECK ONLINE TXNS******************************************************************/
+    if (websocketReceivedEvent == true)
     {
-      #if SERIALDEBUG   
-        Serial.print("Boolean is True ");
-        Serial.println(" Making the flag false");
+      websocketReceivedEvent = false;
+
+      #if SERIALDEBUG
+        Serial.print("TOKENS  :");
+        Serial.println(rxTokens);
       #endif
-      patchConfirmTransaction(TERMINAL, TERMINAL_PASSWORD, WS_txID);
-      successfulTxn = false;
+
+      //CHECK TERMINAL ID #TODO
+      if(WS_terminalID == TERMINAL_ID)
+      {
+        tokenizer(rxTokens);
+      }
+
+      if(successfulTxn)
+      {
+        #if SERIALDEBUG   
+          Serial.print("Boolean is True ");
+          Serial.println(" Making the flag false");
+        #endif
+        patchConfirmTransaction(TERMINAL, TERMINAL_PASSWORD, WS_txID);
+        successfulTxn = false;
+      }
     }
   }
-  
 }// end Loop
+bool wifiStatusCheck()
+{
+  if(WiFiMulti.run() == WL_CONNECTED)
+  {  
+    //wifi_last_connected_time = millis(); 
+    return true;
+  }
+  else
+  {    
+    return false;
+  }
+}
+void connectWifi()
+{
+    #if SERIALDEBUG
+    USE_SERIAL.println();
+    USE_SERIAL.println();
+    USE_SERIAL.println();
+    Serial.print("Connecting to WiFi");
+    Serial.println(ssid);
+  #endif
+  for (uint8_t t = 4; t > 0; t--) 
+  {
+    #if SERIALDEBUG
+      USE_SERIAL.printf("[SETUP] BOOT WAIT %d...\n", t);
+    #endif
+    USE_SERIAL.flush();
+    delay(100);
+  }
+  WiFiMulti.addAP(ssid, password);
+  unsigned long lastTime = millis();
+  
+  while (wifiStatusCheck() == false && (millis()-lastTime) < wifi_timeout) 
+  {
+    delay(100);
+    #if SERIALDEBUG
+      Serial.println(".");
+      Serial.print("Time: ");
+      Serial.println(millis()-lastTime);
+    #endif
+  }
+  #if SERIALDEBUG
+    Serial.println("");
+    Serial.println("WiFi connected");
+    Serial.println("IP address: ");
+    Serial.println(WiFi.localIP());
+  #endif
+}

@@ -75,6 +75,6 @@ int detokenizer(char Cashsignal)
     return 50;
   }
   else {
-    return 0;
+    return 0; // Garbage values
   }
 }

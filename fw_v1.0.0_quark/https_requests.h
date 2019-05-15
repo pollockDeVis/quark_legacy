@@ -1,4 +1,4 @@
-#define SERIALDEBUG 0 //HTTPS DEBUG. CHANGE VALUE TO 1 TO TURN IN ON
+#define SERIALDEBUG 1 //HTTPS DEBUG. CHANGE VALUE TO 1 TO TURN IN ON
 bool oauthFail = false;
 /********************CAUTION: DO NOT CHANGE. *****************************************************************************/
 
@@ -13,7 +13,12 @@ const char fingerprint[] PROGMEM = "a8 0e 9c 81 2a a8 e3 0f e8 3b f5 e6 4c 73 7c
 const int client_id_password_grant = 2;
 const char* client_secret_password_grant  PROGMEM = "xj5CtbPW7LNXOE5AvwY7BUGgfjJ0HAH9fA2gBYMe";
 /****************************************************************************************************************/
-
+bool SuccessfulHttpRequest(WiFiClientSecure _client)
+{
+  String response  = _client.readStringUntil(':');
+  Serial.println(response);
+  return true;
+}
 
 char* getOauthToken(const char* _terminal, const char*  _tPassword)
 {
@@ -172,10 +177,11 @@ void patchTransactionApproval(String access_token, int _WS_txID)
                        "\r\n\r\n" + buffer;
 
   client.println(requestBody);
-   String  line = client.readStringUntil('}'); //readString() is significantly slow
+  bool statusCheck = SuccessfulHttpRequest(client);
+   //String  line = client.readStringUntil(':'); //readString() is significantly slow
 #if SERIALDEBUG
   Serial.println("PATCH REQ SENT");
-  Serial.println(line);
+  //Serial.println(line);
 #endif
 
 }

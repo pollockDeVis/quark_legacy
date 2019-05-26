@@ -16,8 +16,28 @@ const char* client_secret_password_grant  PROGMEM = "xj5CtbPW7LNXOE5AvwY7BUGgfjJ
 bool SuccessfulHttpRequest(WiFiClientSecure _client)
 {
   String response  = _client.readStringUntil(':');
-  Serial.println(response);
-  return true;
+ 
+#if SERIALDEBUG
+  Serial.print("Status code: ");
+  Serial.print(response[9]);
+  Serial.print(response[10]);
+  Serial.println(response[11]);
+#endif
+//checking for status code 200 which is a successful response. Checking the first number for '2' is sufficient enough. Other error codes start with '4' e.g. 422
+  if(response[9] == 2)
+    {
+      #if SERIALDEBUG
+        Serial.print("Successful HTTPS Request");
+      #endif
+      return true;
+    }
+  else
+  {
+    #if SERIALDEBUG
+      Serial.print("Successful HTTPS Request");
+    #endif
+    return false;
+  }
 }
 
 char* getOauthToken(const char* _terminal, const char*  _tPassword)
@@ -35,7 +55,7 @@ char* getOauthToken(const char* _terminal, const char*  _tPassword)
 
   if (!client.connect(host, httpsPort)) {
 #if SERIALDEBUG
-    Serial.println("connection failed");
+    Serial.println("[getOauthToken]: connection failed");
 #endif
     return "X";
   }
@@ -123,7 +143,7 @@ String extractOauthToken(char* stringobject) {
   {
     oauthFail = true;
 #if SERIALDEBUG
-    Serial.println("parseObject() failed");
+    Serial.println("[extractOauthToken]: parseObject() failed");
 #endif
     //return;
   }
@@ -136,7 +156,7 @@ String extractOauthToken(char* stringobject) {
 }
 
 
-void patchTransactionApproval(String access_token, int _WS_txID)
+bool patchTransactionApproval(String access_token, int _WS_txID)
 {
   WiFiClientSecure client;
   String transaction_approval_url  = "/api/v1/transactions/" ; 
@@ -184,10 +204,13 @@ void patchTransactionApproval(String access_token, int _WS_txID)
   //Serial.println(line);
 #endif
 
+  if(statusCheck == true) return true;
+  else return false;
+
 }
 
 
-void postCashTransaction(String access_token, int token) {
+bool postCashTransaction_internal(String access_token, int token) {
 
   WiFiClientSecure client;
   String cash_url   = "/api/v1/cash-transactions";
@@ -237,23 +260,35 @@ void postCashTransaction(String access_token, int token) {
 #if SERIALDEBUG
   Serial.println(line2);
 #endif
+
+ bool statusCheck = SuccessfulHttpRequest(client);
+   //String  line = client.readStringUntil(':'); //readString() is significantly slow
+#if SERIALDEBUG
+  Serial.println("POST REQ SENT");
+#endif
+
+  if(statusCheck == true) return true;
+  else return false;
 }
 
 
-void postCashTransaction(int cash, const char* _terminal, const char* _tPassword) {
+bool postCashTransaction(int cash, const char* _terminal, const char* _tPassword) {
   char* receivedString = getOauthToken(_terminal, _tPassword);
   String receivedToken = extractOauthToken(receivedString);
-  //oauth parsing fails sometimes. This is a failsafe test
+  //oauth parsing fails sometimes. This is a failsafe test // Only repeats it second time
   if(oauthFail)
   {
     receivedString = getOauthToken(_terminal, _tPassword);
     receivedToken = extractOauthToken(receivedString);
     oauthFail = false;
   }
-  postCashTransaction(receivedToken, cash);
+  bool successfulReq = postCashTransaction_internal(receivedToken, cash);
+
+  if(successfulReq == true) return true;
+  else return false;
 }
 
-void patchConfirmTransaction(const char* _terminal, const char* _tPassword, int _WS_txID) // maybe pass in the transaction ID and check inside for match
+bool patchConfirmTransaction(const char* _terminal, const char* _tPassword, int _WS_txID) // maybe pass in the transaction ID and check inside for match
 {
   char* receivedString = getOauthToken(_terminal, _tPassword);
   String receivedToken = extractOauthToken(receivedString);
@@ -264,6 +299,9 @@ void patchConfirmTransaction(const char* _terminal, const char* _tPassword, int 
     receivedToken = extractOauthToken(receivedString);
     oauthFail = false;
   }
-  patchTransactionApproval(receivedToken, _WS_txID);
+  bool successfulReq = patchTransactionApproval(receivedToken, _WS_txID);
+  
+  if(successfulReq == true) return true;
+  else return false;
   
 }

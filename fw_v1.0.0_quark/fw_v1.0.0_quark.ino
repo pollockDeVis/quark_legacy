@@ -13,12 +13,12 @@
 const char* TERMINAL    PROGMEM = "DB000001";
 const int   TERMINAL_ID PROGMEM = 1;
 const char* TERMINAL_PASSWORD  PROGMEM = "123456";
-const char* FIRMWARE_VERSION = "1.0.0"; 
+const char* FIRMWARE_VERSION = "1.0.1"; 
 const char* HARDWARE_VERSION = "1.0.0";
 
 //WIFI CREDENTIALS
-const char* ssid PROGMEM = "dobiqueen";
-const char* password PROGMEM = "dobiqueen";
+const char* ssid PROGMEM = "THREE BROTHERS";
+const char* password PROGMEM = "hola1234";
 const unsigned long wifi_timeout PROGMEM = 10000; // 10 seconds waiting for connecting to wifi
 const unsigned long wifi_reconnect_time PROGMEM = 120000; // 2 min retrying
 unsigned long wifi_last_connected_time = millis();
@@ -35,6 +35,9 @@ int rxTokens;
 int WS_txID;
 int WS_terminalID;
 
+//HTTPS PARAMETERS
+bool successfulPOST = true;
+bool successfulPATCH = true;
 /***************************************************************************************************************/
 #define USE_SERIAL Serial
 
@@ -132,7 +135,11 @@ void loop()
     if (cashValue > 0) 
     {
       if(wifiStatusCheck() == true) //create a variable offline for TXN
-        postCashTransaction(cashValue, TERMINAL, TERMINAL_PASSWORD);
+      successfulPOST =  postCashTransaction(cashValue, TERMINAL, TERMINAL_PASSWORD);
+      if(successfulPOST == false)
+      {
+        //Take time stamp and record Cash value to permanent memory for later updates
+      }
     }
   }
     
@@ -172,8 +179,12 @@ void loop()
           Serial.print("Boolean is True ");
           Serial.println(" Making the flag false");
         #endif
-        patchConfirmTransaction(TERMINAL, TERMINAL_PASSWORD, WS_txID);
+        successfulPATCH = patchConfirmTransaction(TERMINAL, TERMINAL_PASSWORD, WS_txID);
         successfulTxn = false;
+        if(successfulPATCH == false)
+        {
+          //Record WS_TXID for updating later
+        }
       }
     }
   }

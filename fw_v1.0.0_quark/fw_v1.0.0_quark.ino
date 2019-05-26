@@ -117,6 +117,10 @@ void setup()
   webSocket.on("connect", connectEvent);
   webSocket.on("transaction", event);
   webSocket.begin(host, webSocketPort);
+
+int d[] = {0, 1, 5, 10, 21, 55};
+  coin_change_modified(d, 30, 5);
+
   
 } //end setup
 

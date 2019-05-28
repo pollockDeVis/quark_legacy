@@ -6,8 +6,8 @@
 #include "https_requests.h"
 #include <SocketIoClient.h>
 #include <WiFiClientSecure.h>
-
-
+#include <NTPClient.h>
+#include <WiFiUdp.h>
 /********************CHANGE THE PARAMS BELOW BEFORE INSTALLATION *****************************************************************************/
 //QUARK PARAMETERS
 const char* TERMINAL    PROGMEM = "DB000001";
@@ -41,6 +41,12 @@ bool successfulPATCH = true;
 /***************************************************************************************************************/
 #define USE_SERIAL Serial
 
+WiFiUDP ntpUDP;
+NTPClient timeClient(ntpUDP);
+// Variables to save date and time
+String formattedDate;
+String dayStamp;
+String timeStamp;
 
 ESP8266WiFiMulti WiFiMulti;
 SocketIoClient webSocket;
@@ -122,11 +128,24 @@ int d[] = {0, 1, 5, 10, 21, 55};
   coin_change_modified(d, 30, 5);
 
   
+ timeClient.begin();
+  // Set offset time in seconds to adjust for your timezone, for example:
+  // GMT +1 = 3600
+  // GMT +8 = 28800
+  // GMT -1 = -3600
+  // GMT 0 = 0
+  timeClient.setTimeOffset(28800);
+
+  updateTimeFromNTP();
+  
 } //end setup
 
 void loop() 
 {
 /***********************CHECK CASH TXNS**************************************************************/
+  
+
+  
   if (Serial.available() > 0)
   {
      #if SERIALDEBUG
@@ -193,6 +212,27 @@ void loop()
     }
   }
 }// end Loop
+
+void updateTimeFromNTP()
+{
+  while(!timeClient.update()) {
+    timeClient.forceUpdate();
+  }
+
+   formattedDate = timeClient.getFormattedDate();
+  Serial.println(formattedDate);
+
+  //extract date and time
+
+   int splitT = formattedDate.indexOf("T");
+  dayStamp = formattedDate.substring(0, splitT);
+  Serial.print("DATE: ");
+  Serial.println(dayStamp);
+  // Extract time
+  timeStamp = formattedDate.substring(splitT+1, formattedDate.length()-1);
+  Serial.print("HOUR: ");
+  Serial.println(timeStamp);
+}
 bool wifiStatusCheck()
 {
   if(WiFiMulti.run() == WL_CONNECTED)

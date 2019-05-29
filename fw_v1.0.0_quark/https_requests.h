@@ -1,4 +1,4 @@
-#define SERIALDEBUG 1 //HTTPS DEBUG. CHANGE VALUE TO 1 TO TURN IN ON
+#define SERIALDEBUG 0 //HTTPS DEBUG. CHANGE VALUE TO 1 TO TURN IN ON
 bool oauthFail = false;
 /********************CAUTION: DO NOT CHANGE. *****************************************************************************/
 

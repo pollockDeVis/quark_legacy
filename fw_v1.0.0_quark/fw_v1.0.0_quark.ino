@@ -44,10 +44,13 @@ bool successfulPATCH = true;
 WiFiUDP ntpUDP;
 NTPClient timeClient(ntpUDP);
 // Variables to save date and time
-String formattedDate;
-String dayStamp;
-String timeStamp;
+//String formattedDate;
+//String dayStamp;
+//String timeStamp;
 
+String DATE_TIME_ARRAY[10];
+int OFFLINE_CASH_VALUE[10];
+uint8_t offlineCounter = 0;
 ESP8266WiFiMulti WiFiMulti;
 SocketIoClient webSocket;
 
@@ -125,7 +128,7 @@ void setup()
   webSocket.begin(host, webSocketPort);
 
 int d[] = {0, 1, 5, 10, 21, 55};
-  coin_change_modified(d, 30, 5);
+  coin_change_modified(d, 85, 5);
 
   
  timeClient.begin();
@@ -136,14 +139,14 @@ int d[] = {0, 1, 5, 10, 21, 55};
   // GMT 0 = 0
   timeClient.setTimeOffset(28800);
 
-  updateTimeFromNTP();
+  offlineCounter = 0;
   
 } //end setup
 
 void loop() 
 {
 /***********************CHECK CASH TXNS**************************************************************/
-  
+ 
 
   
   if (Serial.available() > 0)
@@ -155,14 +158,42 @@ void loop()
     char incomingByte = Serial.read();
     Serial.println(incomingByte);
     int cashValue = detokenizer(incomingByte);
+    Serial.print("CASH value : ");
+    Serial.println(cashValue);
+
+    if(incomingByte == 'X')
+    {
+      for(int counter =0; counter < 10; counter++)
+      {
+        Serial.print("DateTime: ");
+        Serial.print(DATE_TIME_ARRAY[counter]);
+        Serial.print("   ");
+        Serial.print("CASH VAL: ");
+        Serial.println(OFFLINE_CASH_VALUE[counter]);
+      }
+    }
+    /* 
+    String DATE_TIME_ARRAY[10];
+int OFFLINE_CASH_VALUE[10];
+uint8_t offlineCounter = 0;*/
+     
     if (cashValue > 0) 
     {
-      if(wifiStatusCheck() == true) //create a variable offline for TXN
-      successfulPOST =  postCashTransaction(cashValue, TERMINAL, TERMINAL_PASSWORD);
+      if(wifiStatusCheck() == true)
+      {//create a variable offline for TXN
+        //successfulPOST =  postCashTransaction(cashValue, TERMINAL, TERMINAL_PASSWORD); //CHANGE BACK DISABLED TEMPORARILY FOR TESTING
+      } //else store in offline array // create a function. This will be called for every transaction that is missed irrespective of the cause
       if(successfulPOST == false)
       {
         //Take time stamp and record Cash value to permanent memory for later updates
       }
+
+
+          DATE_TIME_ARRAY[offlineCounter] = updateTimeFromNTP();
+    OFFLINE_CASH_VALUE[offlineCounter] = cashValue;
+    offlineCounter++;
+    if(offlineCounter >9) offlineCounter = 0;
+
     }
   }
     
@@ -213,17 +244,19 @@ void loop()
   }
 }// end Loop
 
-void updateTimeFromNTP()
+String updateTimeFromNTP()
 {
   while(!timeClient.update()) {
     timeClient.forceUpdate();
   }
 
-   formattedDate = timeClient.getFormattedDate();
+  String formattedDate = timeClient.getFormattedDate();
+  return formattedDate;
   Serial.println(formattedDate);
-
+  Serial.print("Size of the string date: ");
+  Serial.println(sizeof(formattedDate));
   //extract date and time
-
+/*
    int splitT = formattedDate.indexOf("T");
   dayStamp = formattedDate.substring(0, splitT);
   Serial.print("DATE: ");
@@ -232,6 +265,7 @@ void updateTimeFromNTP()
   timeStamp = formattedDate.substring(splitT+1, formattedDate.length()-1);
   Serial.print("HOUR: ");
   Serial.println(timeStamp);
+  */
 }
 bool wifiStatusCheck()
 {

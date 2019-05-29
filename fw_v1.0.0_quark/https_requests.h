@@ -210,7 +210,7 @@ bool patchTransactionApproval(String access_token, int _WS_txID)
 }
 
 
-bool postCashTransaction_internal(String access_token, int token) {
+bool postCashTransaction_internal(String access_token, int token, String _date, String _time) {
 
   WiFiClientSecure client;
   String cash_url   = "/api/v1/cash-transactions";
@@ -239,6 +239,8 @@ bool postCashTransaction_internal(String access_token, int token) {
   JsonObject& root = jsonBuffer.createObject();
   // root["terminal"] = client_id;
   root["tokens"] = token;
+  root["transaction_at"] = _date + " " + _time;
+  //ADD DATE TIME BASED ON THE FLAG
   int length = root.measureLength();
   char buffer[length + 1];
   root.printTo(buffer, sizeof(buffer));
@@ -272,7 +274,7 @@ bool postCashTransaction_internal(String access_token, int token) {
 }
 
 
-bool postCashTransaction(int cash, const char* _terminal, const char* _tPassword) {
+bool postCashTransaction(int cash, const char* _terminal, const char* _tPassword, String _date, String _time) {
   char* receivedString = getOauthToken(_terminal, _tPassword);
   String receivedToken = extractOauthToken(receivedString);
   //oauth parsing fails sometimes. This is a failsafe test // Only repeats it second time
@@ -282,7 +284,7 @@ bool postCashTransaction(int cash, const char* _terminal, const char* _tPassword
     receivedToken = extractOauthToken(receivedString);
     oauthFail = false;
   }
-  bool successfulReq = postCashTransaction_internal(receivedToken, cash);
+  bool successfulReq = postCashTransaction_internal(receivedToken, cash, _date, _time);
 
   if(successfulReq == true) return true;
   else return false;

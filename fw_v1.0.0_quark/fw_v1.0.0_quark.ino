@@ -17,8 +17,8 @@ const char* FIRMWARE_VERSION = "1.0.1";
 const char* HARDWARE_VERSION = "1.0.0";
 
 //WIFI CREDENTIALS
-const char* ssid PROGMEM = "THREE BROTHERS";
-const char* password PROGMEM = "hola1234";
+const char* ssid PROGMEM = "dobiqueen";
+const char* password PROGMEM = "dobiqueen";
 const unsigned long wifi_timeout PROGMEM = 10000; // 10 seconds waiting for connecting to wifi
 const unsigned long wifi_reconnect_time PROGMEM = 120000; // 2 min retrying
 unsigned long wifi_last_connected_time = millis();
@@ -46,6 +46,12 @@ bool OfflineCashTransaction = false;
 /***********************NTP SERVER************************************************************************/
 WiFiUDP ntpUDP;
 NTPClient timeClient(ntpUDP);
+
+const int secondInterval PROGMEM= 1000;
+unsigned long updateInterval PROGMEM = 3600000; //update every hour
+unsigned long last_millis = 0;
+unsigned long offlineUNIXClock = 0;
+unsigned long lastUpdateTime = 0;
 /***************************************************************************************************************/
 #define USE_SERIAL Serial
 
@@ -135,11 +141,27 @@ void setup()
   timeClient.setTimeOffset(28800);
 
   offlineCounter = 0;
-  
+// NTP Server TImer and Offline Timer
+//const int secondInterval PROGMEM= 1000;
+//unsigned long last_millis = 0;
+//unsigned long offlineUNIXClock = 0;
+////
+//  Serial.print("UNIXTimeStamp: ");
+//  Serial.println(getUNIXTimeStamp());
+offlineUNIXClock = getUNIXTimeStamp();
+lastUpdateTime  = 0;
 } //end setup
 
 void loop() 
 {
+  if(millis()-last_millis > secondInterval) //Update timer
+  {
+    last_millis = millis();
+    offlineUNIXClock++;
+    #if SERIALDEBUG
+      Serial.println(offlineUNIXClock);
+    #endif
+  }
 /***********************CHECK CASH TXNS**************************************************************/
   if (Serial.available() > 0)
   {
@@ -162,10 +184,16 @@ void loop()
       }//else store in offline array // create a function. This will be called for every transaction that is missed irrespective of the cause
       else
       {
+         #if SERIALDEBUG
+          Serial.println("[WIFI UNAVAILABLE] Recording Offline Transaction");
+        #endif
         recordOfflineCashTransaction(cashValue);
       }
       if(successfulPOST == false)
       {
+        #if SERIALDEBUG
+          Serial.println("[UNSUCCESSFUL POST] Recording Offline Transaction");
+        #endif
         //Take time stamp and record Cash value to permanent memory for later updates
         recordOfflineCashTransaction(cashValue);
       }
@@ -184,6 +212,15 @@ void loop()
     }
   }else
   {
+    ///////////////////////////  TIME SYNC ////////////////////////////////////////////////////////
+      if(millis()-lastUpdateTime > updateInterval)
+      {
+            #if SERIALDEBUG
+              Serial.println("Regular Time Sync");
+            #endif
+        lastUpdateTime = millis();
+        offlineUNIXClock = getUNIXTimeStamp();
+      }
 /************CHECK OFFLINE PENDING TXNS******************************************************************/
     if(OfflineCashTransaction == true)
     {
@@ -228,8 +265,15 @@ void loop()
 void recordOfflineCashTransaction(int _cashValue) //HIGH LEVEL
 {
       OfflineCashTransaction = true;
+      #if SERIALDEBUG  
+        Serial.println("[OFFLINE CASH TXN] ");
+      #endif
+      DATE_TIME_ARRAY[offlineCounter] = getDateTimeFromUnix(offlineUNIXClock); //updateTimeFromNTP();
 
-      DATE_TIME_ARRAY[offlineCounter] = updateTimeFromNTP();
+      #if SERIALDEBUG  
+        Serial.print("[NTP] ");
+        Serial.println(DATE_TIME_ARRAY[offlineCounter]);
+      #endif
       OFFLINE_CASH_VALUE[offlineCounter] = _cashValue;
       offlineCounter++;
       
@@ -241,8 +285,9 @@ void recordOfflineCashTransaction(int _cashValue) //HIGH LEVEL
           cashSum += OFFLINE_CASH_VALUE[counter]; 
         }
         offlineCounter = 0;
-        
-        DATE_TIME_ARRAY[offlineCounter] = updateTimeFromNTP();
+        memset(DATE_TIME_ARRAY, 0, sizeof(DATE_TIME_ARRAY));
+        memset(OFFLINE_CASH_VALUE, 0, sizeof(OFFLINE_CASH_VALUE));
+        DATE_TIME_ARRAY[offlineCounter] = getDateTimeFromUnix(offlineUNIXClock);//updateTimeFromNTP();
         OFFLINE_CASH_VALUE[offlineCounter] = cashSum;
         offlineCounter++;
       }
@@ -259,15 +304,29 @@ void postOfflineCashTransaction() //HIGH LEVEL
     String _date = extractDate(NTPResponse);
     String _time = extractTime(NTPResponse);
     successfulPOST =  postCashTransaction(_cashValue, TERMINAL, TERMINAL_PASSWORD, _date, _time);
+    if(offlineCounter == 0)
+    {
+      OfflineCashTransaction = false;
+    }
   }
-  if(offlineCounter == 0)
-  {
-    OfflineCashTransaction = false;
-  }
+
   
 }
 
+unsigned long getUNIXTimeStamp()
+{
+  while(!timeClient.update()) {
+    timeClient.forceUpdate();
+  }
+  unsigned long epochTime =  timeClient.getEpochTime();
+  return epochTime;
+}
 
+String getDateTimeFromUnix(unsigned long _unixtimestamp)
+{
+  String dateTime = timeClient.getFormattedDate(_unixtimestamp);
+  return dateTime;
+}
 String updateTimeFromNTP()
 {
   while(!timeClient.update()) {
@@ -313,7 +372,7 @@ void connectWifi()
     USE_SERIAL.println();
     USE_SERIAL.println();
     USE_SERIAL.println();
-    Serial.print("Connecting to WiFi");
+    Serial.print("Connecting to WiFi: ");
     Serial.println(ssid);
   #endif
   for (uint8_t t = 4; t > 0; t--) 

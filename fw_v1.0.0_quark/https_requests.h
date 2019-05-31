@@ -13,28 +13,31 @@ const char fingerprint[] PROGMEM = "a8 0e 9c 81 2a a8 e3 0f e8 3b f5 e6 4c 73 7c
 const int client_id_password_grant = 2;
 const char* client_secret_password_grant  PROGMEM = "xj5CtbPW7LNXOE5AvwY7BUGgfjJ0HAH9fA2gBYMe";
 /****************************************************************************************************************/
-bool SuccessfulHttpRequest(WiFiClientSecure _client)
+bool SuccessfulHttpRequest(String _client)
 {
-  String response  = _client.readStringUntil(':');
- 
+  //String response  = _client.readStringUntil('{');
+  int splitT = _client.indexOf(":");
+  String response = _client.substring(0, splitT);
 #if SERIALDEBUG
+  Serial.print("[CHECK HTTP RESPONSE]HTTPS Response: ");
+  Serial.println(response);
   Serial.print("Status code: ");
-  Serial.print(response[9]);
+  Serial.print(response[9]); //9,10,11
   Serial.print(response[10]);
   Serial.println(response[11]);
 #endif
 //checking for status code 200 which is a successful response. Checking the first number for '2' is sufficient enough. Other error codes start with '4' e.g. 422
-  if(response[9] == 2)
+  if(response[9] == '2')
     {
       #if SERIALDEBUG
-        Serial.print("Successful HTTPS Request");
+        Serial.println("Successful HTTPS Request");
       #endif
       return true;
     }
   else
   {
     #if SERIALDEBUG
-      Serial.print("Successful HTTPS Request");
+      Serial.println("Unsuccessful HTTPS Request");
     #endif
     return false;
   }
@@ -197,7 +200,8 @@ bool patchTransactionApproval(String access_token, int _WS_txID)
                        "\r\n\r\n" + buffer;
 
   client.println(requestBody);
-  bool statusCheck = SuccessfulHttpRequest(client);
+  String  line2 = client.readStringUntil('{'); //readString() is significantly slow
+  bool statusCheck = SuccessfulHttpRequest(line2);
    //String  line = client.readStringUntil(':'); //readString() is significantly slow
 #if SERIALDEBUG
   Serial.println("PATCH REQ SENT");
@@ -263,7 +267,7 @@ bool postCashTransaction_internal(String access_token, int token, String _date, 
   Serial.println(line2);
 #endif
 
- bool statusCheck = SuccessfulHttpRequest(client);
+ bool statusCheck = SuccessfulHttpRequest(line2);
    //String  line = client.readStringUntil(':'); //readString() is significantly slow
 #if SERIALDEBUG
   Serial.println("POST REQ SENT");

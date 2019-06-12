@@ -8,6 +8,8 @@
 #include <WiFiClientSecure.h>
 #include <NTPClient.h>
 #include <WiFiUdp.h>
+#include <ESP8266Ping.h>
+#include <Ticker.h>
 /********************CHANGE THE PARAMS BELOW BEFORE INSTALLATION *****************************************************************************/
 //QUARK PARAMETERS
 const char* TERMINAL    PROGMEM = "DB000001";
@@ -57,6 +59,9 @@ unsigned long lastUpdateTime = 0;
 
 ESP8266WiFiMulti WiFiMulti;
 SocketIoClient webSocket;
+Ticker ticker; //Ticker for Interrupt
+char incomingByte;
+bool incomingFlag = false;
 
 void connectEvent(const char * payload, size_t length)
 {
@@ -150,31 +155,35 @@ void setup()
 //  Serial.println(getUNIXTimeStamp());
 offlineUNIXClock = getUNIXTimeStamp();
 lastUpdateTime  = 0;
+ticker.attach(1, checkSerialISR); //(time in seconds, isrFunction)
 } //end setup
 
 void loop() 
 {
+  bool InternetStatusFlag = wifiStatusCheck();
   if(millis()-last_millis > secondInterval) //Update timer
   {
+     offlineUNIXClock += ((millis()-last_millis)/1000); //offlineUNIXClock++;
     last_millis = millis();
-    offlineUNIXClock++;
+   
     #if SERIALDEBUG
       Serial.println(offlineUNIXClock);
     #endif
   }
 /***********************CHECK CASH TXNS**************************************************************/
-  if (Serial.available() > 0)
+  if (incomingFlag)
   {
-     #if SERIALDEBUG
-      Serial.print("Serial Availability: ");
-      Serial.println(Serial.available());
-    #endif
-    char incomingByte = Serial.read();
-    Serial.println(incomingByte);
+    incomingFlag = false;
+//     #if SERIALDEBUG
+//      Serial.print("Serial Availability: ");
+//      Serial.println(Serial.available());
+//    #endif
+//    char incomingByte = Serial.read();
+//    Serial.println(incomingByte);
     int cashValue = detokenizer(incomingByte);
     if (cashValue > 0) 
     {
-      if(wifiStatusCheck() == true)
+      if(InternetStatusFlag == true)
       {
         //create a variable offline for TXN
         String _NTPString = updateTimeFromNTP();
@@ -200,7 +209,7 @@ void loop()
     }
   }
     
-  if(wifiStatusCheck() == false)
+  if(InternetStatusFlag == false)
   {
     if((millis() - wifi_last_connected_time) > wifi_reconnect_time) // reconnects every 2 minutes || Serial is checked so that it doesn't go into reconnecting the wifi when transaction is taking place
     {
@@ -261,6 +270,20 @@ void loop()
     }
   }
 }// end Loop
+
+void checkSerialISR()
+{
+  if (Serial.available() > 0)
+  {
+     #if SERIALDEBUG
+      Serial.print("Serial Availability: ");
+      Serial.println(Serial.available());
+    #endif
+    incomingByte = Serial.read();
+    Serial.println(incomingByte);
+    incomingFlag = true;
+  }
+}
 
 void recordOfflineCashTransaction(int _cashValue) //HIGH LEVEL
 {
@@ -335,9 +358,11 @@ String updateTimeFromNTP()
 
   String formattedDate = timeClient.getFormattedDate();
   return formattedDate;
+   #if SERIALDEBUG
   Serial.println(formattedDate);
   Serial.print("Size of the string date: ");
   Serial.println(sizeof(formattedDate));
+  #endif
 }
 
 String extractDate(String _NTPResponse)
@@ -357,8 +382,17 @@ String extractTime(String _NTPResponse)
 bool wifiStatusCheck()
 {
   if(WiFiMulti.run() == WL_CONNECTED)
-  {  
-    //wifi_last_connected_time = millis(); 
+  {   
+     bool ret = Ping.ping(host);
+      #if SERIALDEBUG
+      Serial.print("Ping Response : ");
+      Serial.println(ret);
+      #endif
+      if(ret == false)
+      {
+        return false;
+      }
+      
     return true;
   }
   else

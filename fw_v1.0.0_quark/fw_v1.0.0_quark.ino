@@ -25,9 +25,10 @@ const unsigned long wifi_timeout PROGMEM = 10000; // 10 seconds waiting for conn
 const unsigned long wifi_reconnect_time PROGMEM = 120000; // 2 min retrying
 unsigned long wifi_last_connected_time = millis();
 
-bool WIFI_ACTIVE = true;
-bool INTERNET_ACTIVE = true;
-bool WIFI_reconnect_flag = false;
+//bool WIFI_ACTIVE = false;
+//bool INTERNET_ACTIVE = false;
+//bool WIFI_reconnect_flag = false;
+
 //DEBUG
 #define SERIALDEBUG 1 //WEBSOCKETS DEBUG. CHANGE VALUE TO 1 TO TURN IN ON
  
@@ -157,8 +158,8 @@ ticker.attach(1, checkSerialISR); //(time in seconds, isrFunction)
 void loop() 
 {
   
- //WIFI_ACTIVE = wifiStatusCheck();
- //INTERNET_ACTIVE = internetConnectivity();
+// WIFI_ACTIVE = wifiStatusCheck();
+// INTERNET_ACTIVE = internetConnectivity();
 
   if(millis()-last_millis > secondInterval) //Update timer
   {
@@ -233,7 +234,7 @@ void loop()
   {
     if((millis() - wifi_last_connected_time) > wifi_reconnect_time && incomingFlag == false) // reconnects every 2 minutes || Serial is checked so that it doesn't go into reconnecting the wifi when transaction is taking place
     {
-      //WIFI_reconnect_flag = true;
+     // WIFI_reconnect_flag = true;
       wifi_last_connected_time = millis(); // Readjusting the timer so that it doesn't keep on reconnecting on every loop after 2 min has elapsed
     #if SERIALDEBUG
       Serial.print("Connection Lost, Reconnecting");

@@ -25,9 +25,12 @@ const unsigned long wifi_timeout PROGMEM = 10000; // 10 seconds waiting for conn
 const unsigned long wifi_reconnect_time PROGMEM = 120000; // 2 min retrying
 unsigned long wifi_last_connected_time = millis();
 
+bool WIFI_ACTIVE = true;
+bool INTERNET_ACTIVE = true;
+bool WIFI_reconnect_flag = false;
 //DEBUG
-#define SERIALDEBUG 0 //WEBSOCKETS DEBUG. CHANGE VALUE TO 1 TO TURN IN ON
-
+#define SERIALDEBUG 1 //WEBSOCKETS DEBUG. CHANGE VALUE TO 1 TO TURN IN ON
+ 
 /********************CAUTION: DO NOT CHANGE. *****************************************************************************/
 //WEBSOCKET PARAMETERS
 const int webSocketPort = 2052;
@@ -145,13 +148,7 @@ void setup()
   timeClient.setTimeOffset(28800);
 
   offlineCounter = 0;
-// NTP Server TImer and Offline Timer
-//const int secondInterval PROGMEM= 1000;
-//unsigned long last_millis = 0;
-//unsigned long offlineUNIXClock = 0;
-////
-//  Serial.print("UNIXTimeStamp: ");
-//  Serial.println(getUNIXTimeStamp());
+
 offlineUNIXClock = getUNIXTimeStamp();
 lastUpdateTime  = 0;
 ticker.attach(1, checkSerialISR); //(time in seconds, isrFunction)
@@ -159,7 +156,10 @@ ticker.attach(1, checkSerialISR); //(time in seconds, isrFunction)
 
 void loop() 
 {
-  bool InternetConnectivity = internetConnectivity();
+  
+ //WIFI_ACTIVE = wifiStatusCheck();
+ //INTERNET_ACTIVE = internetConnectivity();
+
   if(millis()-last_millis > secondInterval) //Update timer
   {
      offlineUNIXClock += ((millis()-last_millis)/1000); //offlineUNIXClock++;
@@ -172,41 +172,8 @@ void loop()
 /***********************CHECK CASH TXNS**************************************************************/
   if (incomingFlag)
   {
-    incomingFlag = false;
-//     #if SERIALDEBUG
-//      Serial.print("Serial Availability: ");
-//      Serial.println(Serial.available());
-//    #endif
-//    char incomingByte = Serial.read();
-//    Serial.println(incomingByte);
-    int cashValue = detokenizer(incomingByte);
-    if (cashValue > 0) 
-    {
-        if(wifiStatusCheck() == true && InternetConnectivity == true)
-        {
-          //create a variable offline for TXN
-          String _NTPString = updateTimeFromNTP();
-          String _date = extractDate(_NTPString);
-          String _time = extractTime(_NTPString);
-          successfulPOST =  postCashTransaction(cashValue, TERMINAL, TERMINAL_PASSWORD, _date, _time);
-        }//else store in offline array // create a function. This will be called for every transaction that is missed irrespective of the cause
-        else
-        {
-          #if SERIALDEBUG
-            Serial.println("[WIFI UNAVAILABLE] Recording Offline Transaction");
-          #endif
-          recordOfflineCashTransaction(cashValue);
-        }
-      //}
-      if(successfulPOST == false)
-      {
-        #if SERIALDEBUG
-          Serial.println("[UNSUCCESSFUL POST] Recording Offline Transaction");
-        #endif
-        //Take time stamp and record Cash value to permanent memory for later updates
-        recordOfflineCashTransaction(cashValue);
-      }
-    }
+    checkCashTransaction();
+
   }
     
   if(wifiStatusCheck() == true)
@@ -223,7 +190,7 @@ void loop()
     /************CHECK OFFLINE PENDING TXNS******************************************************************/
       if(OfflineCashTransaction == true)
       {
-        if(InternetConnectivity == true)
+        if(internetConnectivity() == true)
         {
           postOfflineCashTransaction();
         }
@@ -264,13 +231,15 @@ void loop()
   }
   else
   {
-    if((millis() - wifi_last_connected_time) > wifi_reconnect_time) // reconnects every 2 minutes || Serial is checked so that it doesn't go into reconnecting the wifi when transaction is taking place
+    if((millis() - wifi_last_connected_time) > wifi_reconnect_time && incomingFlag == false) // reconnects every 2 minutes || Serial is checked so that it doesn't go into reconnecting the wifi when transaction is taking place
     {
+      //WIFI_reconnect_flag = true;
       wifi_last_connected_time = millis(); // Readjusting the timer so that it doesn't keep on reconnecting on every loop after 2 min has elapsed
     #if SERIALDEBUG
       Serial.print("Connection Lost, Reconnecting");
     #endif
       connectWifi();
+        //WIFI_reconnect_flag = false;
     }
   }
 }// end Loop
@@ -288,9 +257,46 @@ void checkSerialISR()
     incomingByte = Serial.read();
     Serial.println(incomingByte);
     incomingFlag = true;
+//    if(WIFI_reconnect_flag)
+//    {
+//      checkCashTransaction();
+//    }
   }
 }
+void checkCashTransaction()
+{
 
+      incomingFlag = false;
+
+    int cashValue = detokenizer(incomingByte);
+    if (cashValue > 0) 
+    {
+        if(wifiStatusCheck() == true && internetConnectivity() == true)
+        {
+          //create a variable offline for TXN
+          String _NTPString = updateTimeFromNTP();
+          String _date = extractDate(_NTPString);
+          String _time = extractTime(_NTPString);
+          successfulPOST =  postCashTransaction(cashValue, TERMINAL, TERMINAL_PASSWORD, _date, _time);
+        }//else store in offline array // create a function. This will be called for every transaction that is missed irrespective of the cause
+        else
+        {
+          #if SERIALDEBUG
+            Serial.println("[WIFI UNAVAILABLE] Recording Offline Transaction");
+          #endif
+          recordOfflineCashTransaction(cashValue);
+        }
+      //}
+      if(successfulPOST == false)
+      {
+        #if SERIALDEBUG
+          Serial.println("[UNSUCCESSFUL POST] Recording Offline Transaction");
+        #endif
+        //Take time stamp and record Cash value to permanent memory for later updates
+        recordOfflineCashTransaction(cashValue);
+      }
+    }
+}
 void recordOfflineCashTransaction(int _cashValue) //HIGH LEVEL
 {
       OfflineCashTransaction = true;

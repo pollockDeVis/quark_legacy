@@ -19,8 +19,8 @@ const char* FIRMWARE_VERSION = "1.0.1";
 const char* HARDWARE_VERSION = "1.0.0";
 
 //WIFI CREDENTIALS
-const char* ssid PROGMEM = "dobiqueen";
-const char* password PROGMEM = "dobiqueen";
+const char* ssid PROGMEM = "THREE BROTHERS";
+const char* password PROGMEM = "hola1234";
 const unsigned long wifi_timeout PROGMEM = 10000; // 10 seconds waiting for connecting to wifi
 const unsigned long wifi_reconnect_time PROGMEM = 120000; // 2 min retrying
 unsigned long wifi_last_connected_time = millis();
@@ -29,7 +29,7 @@ bool WIFI_ACTIVE = true;
 bool INTERNET_ACTIVE = true;
 bool WIFI_reconnect_flag = false;
 //DEBUG
-#define SERIALDEBUG 1 //WEBSOCKETS DEBUG. CHANGE VALUE TO 1 TO TURN IN ON
+#define SERIALDEBUG 0 //WEBSOCKETS DEBUG. CHANGE VALUE TO 1 TO TURN IN ON
  
 /********************CAUTION: DO NOT CHANGE. *****************************************************************************/
 //WEBSOCKET PARAMETERS
@@ -157,12 +157,12 @@ ticker.attach(1, checkSerialISR); //(time in seconds, isrFunction)
 void loop() 
 {
   
- //WIFI_ACTIVE = wifiStatusCheck();
- //INTERNET_ACTIVE = internetConnectivity();
+ WIFI_ACTIVE = wifiStatusCheck();
+ INTERNET_ACTIVE = internetConnectivity();
 
   if(millis()-last_millis > secondInterval) //Update timer
   {
-     offlineUNIXClock += ((millis()-last_millis)/1000); //offlineUNIXClock++;
+     offlineUNIXClock += ((millis()-last_millis)/1000); //offlineUNIXClock++;-
     last_millis = millis();
    
     #if SERIALDEBUG
@@ -176,7 +176,7 @@ void loop()
 
   }
     
-  if(wifiStatusCheck() == true)
+  if(WIFI_ACTIVE == true)
   {
         ///////////////////////////  TIME SYNC ////////////////////////////////////////////////////////
       if(millis()-lastUpdateTime > updateInterval)
@@ -190,7 +190,7 @@ void loop()
     /************CHECK OFFLINE PENDING TXNS******************************************************************/
       if(OfflineCashTransaction == true)
       {
-        if(internetConnectivity() == true)
+        if(INTERNET_ACTIVE == true)
         {
           postOfflineCashTransaction();
         }
@@ -233,13 +233,13 @@ void loop()
   {
     if((millis() - wifi_last_connected_time) > wifi_reconnect_time && incomingFlag == false) // reconnects every 2 minutes || Serial is checked so that it doesn't go into reconnecting the wifi when transaction is taking place
     {
-      //WIFI_reconnect_flag = true;
+      WIFI_reconnect_flag = true;
       wifi_last_connected_time = millis(); // Readjusting the timer so that it doesn't keep on reconnecting on every loop after 2 min has elapsed
     #if SERIALDEBUG
       Serial.print("Connection Lost, Reconnecting");
     #endif
       connectWifi();
-        //WIFI_reconnect_flag = false;
+        WIFI_reconnect_flag = false;
     }
   }
 }// end Loop
@@ -257,10 +257,10 @@ void checkSerialISR()
     incomingByte = Serial.read();
     Serial.println(incomingByte);
     incomingFlag = true;
-//    if(WIFI_reconnect_flag)
-//    {
-//      checkCashTransaction();
-//    }
+    if(WIFI_reconnect_flag)
+    {
+      checkCashTransaction();
+    }
   }
 }
 void checkCashTransaction()
@@ -271,7 +271,7 @@ void checkCashTransaction()
     int cashValue = detokenizer(incomingByte);
     if (cashValue > 0) 
     {
-        if(wifiStatusCheck() == true && internetConnectivity() == true)
+        if(WIFI_ACTIVE == true && INTERNET_ACTIVE == true)
         {
           //create a variable offline for TXN
           String _NTPString = updateTimeFromNTP();
@@ -315,7 +315,7 @@ void recordOfflineCashTransaction(int _cashValue) //HIGH LEVEL
       if(offlineCounter > 19) //sums up all and put it in the first array if it overflows
       {
         int cashSum = 0;
-        for(uint8_t counter = 0; counter < 19; counter++) // Adding Up all the values
+        for(uint8_t counter = 0; counter <= 19; counter++) // Adding Up all the values
         {
           cashSum += OFFLINE_CASH_VALUE[counter]; 
         }

@@ -19,8 +19,8 @@ const char* FIRMWARE_VERSION = "1.0.1";
 const char* HARDWARE_VERSION = "1.0.0";
 
 //WIFI CREDENTIALS
-const char* ssid PROGMEM = "THREE BROTHERS";
-const char* password PROGMEM = "hola1234";
+const char* ssid PROGMEM = "dobiqueen";
+const char* password PROGMEM = "dobiqueen";
 const unsigned long wifi_timeout PROGMEM = 10000; // 10 seconds waiting for connecting to wifi
 const unsigned long wifi_reconnect_time PROGMEM = 120000; // 2 min retrying
 unsigned long wifi_last_connected_time = millis();

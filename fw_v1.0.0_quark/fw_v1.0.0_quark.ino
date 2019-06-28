@@ -252,10 +252,10 @@ void checkSerialISR()
 {
   if (Serial.available() > 0)
   {
-     #if SERIALDEBUG
-      Serial.print("Serial Availability: ");
-      Serial.println(Serial.available());
-    #endif
+//     #if SERIALDEBUG
+//      Serial.print("Serial Availability: ");
+//      Serial.println(Serial.available());
+//    #endif
     incomingByte = Serial.read();
     Serial.println(incomingByte);
    

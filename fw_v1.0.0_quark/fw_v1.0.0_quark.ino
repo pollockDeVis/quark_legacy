@@ -28,8 +28,10 @@ unsigned long wifi_last_connected_time = millis();
 bool WIFI_ACTIVE = true;
 bool INTERNET_ACTIVE = true;
 bool WIFI_reconnect_flag = false;
+int accumulated_txns_wifi_reconnect = 0;
+bool ACCUMULATED_TXNS = false;
 //DEBUG
-#define SERIALDEBUG 0 //WEBSOCKETS DEBUG. CHANGE VALUE TO 1 TO TURN IN ON
+#define SERIALDEBUG 1 //WEBSOCKETS DEBUG. CHANGE VALUE TO 1 TO TURN IN ON
  
 /********************CAUTION: DO NOT CHANGE. *****************************************************************************/
 //WEBSOCKET PARAMETERS
@@ -256,10 +258,13 @@ void checkSerialISR()
     #endif
     incomingByte = Serial.read();
     Serial.println(incomingByte);
+   
     incomingFlag = true;
     if(WIFI_reconnect_flag)
     {
-      checkCashTransaction();
+      accumulated_txns_wifi_reconnect += detokenizer(incomingByte);
+      ACCUMULATED_TXNS = true;
+      //checkCashTransaction();
     }
   }
 }
@@ -269,6 +274,14 @@ void checkCashTransaction()
       incomingFlag = false;
 
     int cashValue = detokenizer(incomingByte);
+
+    if(ACCUMULATED_TXNS)     //Check for possible bugs
+    {
+      cashValue += accumulated_txns_wifi_reconnect;
+      ACCUMULATED_TXNS = false;
+      accumulated_txns_wifi_reconnect = 0;
+      
+    }
     if (cashValue > 0) 
     {
         if(WIFI_ACTIVE == true && INTERNET_ACTIVE == true)

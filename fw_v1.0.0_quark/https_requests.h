@@ -1,5 +1,5 @@
-#define SERIALDEBUG 1 //HTTPS DEBUG. CHANGE VALUE TO 1 TO TURN IN ON
-#define CASHTRANSACTION 0
+#define SERIALDEBUG 0 //HTTPS DEBUG. CHANGE VALUE TO 1 TO TURN IN ON
+//#define CASHTRANSACTION 0
 bool oauthFail = false;
 
 /********************CAUTION: DO NOT CHANGE. *****************************************************************************/

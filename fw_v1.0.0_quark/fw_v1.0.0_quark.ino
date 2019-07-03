@@ -12,15 +12,15 @@
 #include <ESP8266Ping.h>
 /********************CHANGE THE PARAMS BELOW BEFORE INSTALLATION *****************************************************************************/
 //QUARK PARAMETERS
-const char* TERMINAL    PROGMEM = "DB000001";
-const int   TERMINAL_ID PROGMEM = 1;
-const char* TERMINAL_PASSWORD  PROGMEM = "123456";
-const char* FIRMWARE_VERSION = "1.0.1"; 
-const char* HARDWARE_VERSION = "1.0.0";
+const char* TERMINAL    PROGMEM = "DB000004";
+const int   TERMINAL_ID PROGMEM = 4;
+const char* TERMINAL_PASSWORD  PROGMEM = "cP3twq0f";
+const char* FIRMWARE_VERSION = "1.0.2"; 
+const char* HARDWARE_VERSION = "1.0.1";
 
 //WIFI CREDENTIALS
-const char* ssid PROGMEM = "THREE BROTHERS";
-const char* password PROGMEM = "hola1234";
+const char* ssid PROGMEM = "Cucian Hebat@unifi";
+const char* password PROGMEM = "dobiqueen";
 const unsigned long wifi_timeout PROGMEM = 10000; // 10 seconds waiting for connecting to wifi
 const unsigned long wifi_reconnect_time PROGMEM = 120000; // 2 min retrying
 unsigned long wifi_last_connected_time = millis();
@@ -31,7 +31,7 @@ bool WIFI_reconnect_flag = false;
 int accumulated_txns_wifi_reconnect = 0;
 bool ACCUMULATED_TXNS = false;
 //DEBUG
-#define SERIALDEBUG 1 //WEBSOCKETS DEBUG. CHANGE VALUE TO 1 TO TURN IN ON
+#define SERIALDEBUG 0 //WEBSOCKETS DEBUG. CHANGE VALUE TO 1 TO TURN IN ON
 //#define CASHTRANSACTION 0
 /********************CAUTION: DO NOT CHANGE. *****************************************************************************/
 //WEBSOCKET PARAMETERS

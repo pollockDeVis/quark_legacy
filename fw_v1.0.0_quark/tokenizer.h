@@ -3,7 +3,7 @@
 #define RM10 10   //C
 #define RM5 5     //B
 #define RM1 1     //@
-
+#define MAIN_SERIAL Serial1
 extern bool successfulTxn;
 const int INF PROGMEM= 100000;
 
@@ -94,7 +94,7 @@ int coin_change_algorithm(int d[], int n, int k) {
    //Serial.printf("%d\n",d[S[l]]);
    char* TOKEN_SYMBOL = internal_tokenizer(d[S[l]]) ;
    //Replicating the actual Signal
-   Serial.println(TOKEN_SYMBOL);
+   MAIN_SERIAL.println(TOKEN_SYMBOL);
     l = l-d[S[l]];
   }
   return M[n];

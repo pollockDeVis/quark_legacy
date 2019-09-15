@@ -31,8 +31,8 @@ bool WIFI_reconnect_flag = false;
 int accumulated_txns_wifi_reconnect = 0;
 bool ACCUMULATED_TXNS = false;
 //DEBUG
-#define SERIALDEBUG 1 //WEBSOCKETS DEBUG. CHANGE VALUE TO 1 TO TURN IN ON
-#define CASHTRANSACTION 1
+#define SERIALDEBUG 0 //WEBSOCKETS DEBUG. CHANGE VALUE TO 1 TO TURN IN ON
+#define CASHTRANSACTION 0
 /********************CAUTION: DO NOT CHANGE. *****************************************************************************/
 //WEBSOCKET PARAMETERS
 const int webSocketPort = 2052;
@@ -149,7 +149,7 @@ void setup()
   // GMT +8 = 28800 //Malaysian Time GMT +8
   // GMT -1 = -3600
   // GMT 0 = 0
-  timeClient.setTimeOffset(28800);
+  timeClient.setTimeOffset(0);
 
   offlineCounter = 0;
 
@@ -298,7 +298,7 @@ void checkCashTransaction()
         if(WIFI_ACTIVE == true && INTERNET_ACTIVE == true)
         {
           //create a variable offline for TXN
-          String _NTPString = (String)offlineUNIXClock; //getUNIXTimeStamp(); //updateTimeFromNTP();
+          unsigned long _NTPString = offlineUNIXClock; //getUNIXTimeStamp(); //updateTimeFromNTP();
 //          String _date = extractDate(_NTPString);
 //          String _time = extractTime(_NTPString);
           successfulPOST =  postCashTransaction(cashValue, TERMINAL, TERMINAL_PASSWORD, _NTPString);
@@ -360,7 +360,7 @@ void postOfflineCashTransaction() //HIGH LEVEL
   {
     offlineCounter--;
     int _cashValue = OFFLINE_CASH_VALUE[offlineCounter];
-    String NTPResponse = (String)offlineUNIXClock; //getUNIXTimeStamp();//DATE_TIME_ARRAY[offlineCounter];
+    unsigned long NTPResponse = offlineUNIXClock; //getUNIXTimeStamp();//DATE_TIME_ARRAY[offlineCounter];
 //    String _date = extractDate(NTPResponse);
 //    String _time = extractTime(NTPResponse);
     successfulPOST =  postCashTransaction(_cashValue, TERMINAL, TERMINAL_PASSWORD, NTPResponse);

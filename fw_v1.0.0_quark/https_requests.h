@@ -1,5 +1,5 @@
-#define SERIALDEBUG 1 //HTTPS DEBUG. CHANGE VALUE TO 1 TO TURN IN ON
-#define CASHTRANSACTION 1
+#define SERIALDEBUG 0 //HTTPS DEBUG. CHANGE VALUE TO 1 TO TURN IN ON
+#define CASHTRANSACTION 0
 bool oauthFail = false;
 
 /********************CAUTION: DO NOT CHANGE. *****************************************************************************/
@@ -217,7 +217,7 @@ bool patchTransactionApproval(String access_token, int _WS_txID)
 }
 
 
-bool postCashTransaction_internal(String access_token, int token, String _UNIXTS) {
+bool postCashTransaction_internal(String access_token, int token, unsigned long _UNIXTS) {
 
   WiFiClientSecure client;
   String cash_url   = "/api/v1/cash-transactions";
@@ -283,7 +283,7 @@ bool postCashTransaction_internal(String access_token, int token, String _UNIXTS
 }
 
 
-bool postCashTransaction(int cash, const char* _terminal, const char* _tPassword, String _UNIXTS) {
+bool postCashTransaction(int cash, const char* _terminal, const char* _tPassword, unsigned long _UNIXTS) {
   char* receivedString = getOauthToken(_terminal, _tPassword);
   String receivedToken = extractOauthToken(receivedString);
   //oauth parsing fails sometimes. This is a failsafe test // Only repeats it second time

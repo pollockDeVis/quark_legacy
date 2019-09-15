@@ -1,5 +1,5 @@
-#define SERIALDEBUG 0 //HTTPS DEBUG. CHANGE VALUE TO 1 TO TURN IN ON
-//#define CASHTRANSACTION 0
+#define SERIALDEBUG 1 //HTTPS DEBUG. CHANGE VALUE TO 1 TO TURN IN ON
+#define CASHTRANSACTION 1
 bool oauthFail = false;
 
 /********************CAUTION: DO NOT CHANGE. *****************************************************************************/
@@ -217,7 +217,7 @@ bool patchTransactionApproval(String access_token, int _WS_txID)
 }
 
 
-bool postCashTransaction_internal(String access_token, int token, String _date, String _time) {
+bool postCashTransaction_internal(String access_token, int token, String _UNIXTS) {
 
   WiFiClientSecure client;
   String cash_url   = "/api/v1/cash-transactions";
@@ -245,9 +245,9 @@ bool postCashTransaction_internal(String access_token, int token, String _date, 
 
   JsonObject& root = jsonBuffer.createObject();
   // root["terminal"] = client_id;
-  root["tokens"] = token;
+  root["cash"] = token;
 #ifdef CASHTRANSACTION
-    root["transaction_at"] = _date + " " + _time;
+    root["timestamp"] = _UNIXTS;
 #endif
   //ADD DATE TIME BASED ON THE FLAG
   int length = root.measureLength();
@@ -283,7 +283,7 @@ bool postCashTransaction_internal(String access_token, int token, String _date, 
 }
 
 
-bool postCashTransaction(int cash, const char* _terminal, const char* _tPassword, String _date, String _time) {
+bool postCashTransaction(int cash, const char* _terminal, const char* _tPassword, String _UNIXTS) {
   char* receivedString = getOauthToken(_terminal, _tPassword);
   String receivedToken = extractOauthToken(receivedString);
   //oauth parsing fails sometimes. This is a failsafe test // Only repeats it second time
@@ -293,7 +293,7 @@ bool postCashTransaction(int cash, const char* _terminal, const char* _tPassword
     receivedToken = extractOauthToken(receivedString);
     oauthFail = false;
   }
-  bool successfulReq = postCashTransaction_internal(receivedToken, cash, _date, _time);
+  bool successfulReq = postCashTransaction_internal(receivedToken, cash, _UNIXTS);
 
   if(successfulReq == true) return true;
   else return false;

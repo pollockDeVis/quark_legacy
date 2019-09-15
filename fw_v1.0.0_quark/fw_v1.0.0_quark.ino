@@ -12,15 +12,15 @@
 #include <ESP8266Ping.h>
 /********************CHANGE THE PARAMS BELOW BEFORE INSTALLATION *****************************************************************************/
 //QUARK PARAMETERS
-const char* TERMINAL    PROGMEM = "DB000004";
-const int   TERMINAL_ID PROGMEM = 4;
-const char* TERMINAL_PASSWORD  PROGMEM = "cP3twq0f";
+const char* TERMINAL    PROGMEM = "DB000001";
+const int   TERMINAL_ID PROGMEM = 1;
+const char* TERMINAL_PASSWORD  PROGMEM = "123456";
 const char* FIRMWARE_VERSION = "1.0.2"; 
 const char* HARDWARE_VERSION = "1.0.1";
 
 //WIFI CREDENTIALS
-const char* ssid PROGMEM = "Cucian Hebat@unifi";
-const char* password PROGMEM = "dobiqueen";
+const char* ssid PROGMEM = "You know you want me";
+const char* password PROGMEM = "tofunaan1629";
 const unsigned long wifi_timeout PROGMEM = 10000; // 10 seconds waiting for connecting to wifi
 const unsigned long wifi_reconnect_time PROGMEM = 120000; // 2 min retrying
 unsigned long wifi_last_connected_time = millis();
@@ -31,8 +31,8 @@ bool WIFI_reconnect_flag = false;
 int accumulated_txns_wifi_reconnect = 0;
 bool ACCUMULATED_TXNS = false;
 //DEBUG
-#define SERIALDEBUG 0 //WEBSOCKETS DEBUG. CHANGE VALUE TO 1 TO TURN IN ON
-//#define CASHTRANSACTION 0
+#define SERIALDEBUG 1 //WEBSOCKETS DEBUG. CHANGE VALUE TO 1 TO TURN IN ON
+#define CASHTRANSACTION 1
 /********************CAUTION: DO NOT CHANGE. *****************************************************************************/
 //WEBSOCKET PARAMETERS
 const int webSocketPort = 2052;
@@ -298,10 +298,10 @@ void checkCashTransaction()
         if(WIFI_ACTIVE == true && INTERNET_ACTIVE == true)
         {
           //create a variable offline for TXN
-          String _NTPString = updateTimeFromNTP();
-          String _date = extractDate(_NTPString);
-          String _time = extractTime(_NTPString);
-          successfulPOST =  postCashTransaction(cashValue, TERMINAL, TERMINAL_PASSWORD, _date, _time);
+          String _NTPString = (String)offlineUNIXClock; //getUNIXTimeStamp(); //updateTimeFromNTP();
+//          String _date = extractDate(_NTPString);
+//          String _time = extractTime(_NTPString);
+          successfulPOST =  postCashTransaction(cashValue, TERMINAL, TERMINAL_PASSWORD, _NTPString);
         }//else store in offline array // create a function. This will be called for every transaction that is missed irrespective of the cause
         else
         {
@@ -360,10 +360,10 @@ void postOfflineCashTransaction() //HIGH LEVEL
   {
     offlineCounter--;
     int _cashValue = OFFLINE_CASH_VALUE[offlineCounter];
-    String NTPResponse = DATE_TIME_ARRAY[offlineCounter];
-    String _date = extractDate(NTPResponse);
-    String _time = extractTime(NTPResponse);
-    successfulPOST =  postCashTransaction(_cashValue, TERMINAL, TERMINAL_PASSWORD, _date, _time);
+    String NTPResponse = (String)offlineUNIXClock; //getUNIXTimeStamp();//DATE_TIME_ARRAY[offlineCounter];
+//    String _date = extractDate(NTPResponse);
+//    String _time = extractTime(NTPResponse);
+    successfulPOST =  postCashTransaction(_cashValue, TERMINAL, TERMINAL_PASSWORD, NTPResponse);
     if(offlineCounter == 0)
     {
       OfflineCashTransaction = false;
@@ -420,8 +420,8 @@ bool internetConnectivity()
 {
       bool ret = Ping.ping(host, 1);
       #if SERIALDEBUG
-      Serial.print("Ping Response : ");
-      Serial.println(ret);
+      //Serial.print("Ping Response : ");
+      //Serial.println(ret);
       #endif
       if(ret == false)
       {

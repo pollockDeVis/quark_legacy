@@ -15,12 +15,12 @@
 const char* TERMINAL    PROGMEM = "DB000001";
 const int   TERMINAL_ID PROGMEM = 1;
 const char* TERMINAL_PASSWORD  PROGMEM = "123456";
-const char* FIRMWARE_VERSION = "1.0.2"; 
+const char* FIRMWARE_VERSION = "1.0.3"; 
 const char* HARDWARE_VERSION = "1.0.1";
 
 //WIFI CREDENTIALS
-const char* ssid PROGMEM = "You know you want me";
-const char* password PROGMEM = "tofunaan1629";
+const char* ssid PROGMEM = "Cucian Hebat";
+const char* password PROGMEM = "dobiqueen";
 const unsigned long wifi_timeout PROGMEM = 10000; // 10 seconds waiting for connecting to wifi
 const unsigned long wifi_reconnect_time PROGMEM = 120000; // 2 min retrying
 unsigned long wifi_last_connected_time = millis();

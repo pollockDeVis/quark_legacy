@@ -12,8 +12,8 @@
 #include <ESP8266Ping.h>
 /********************CHANGE THE PARAMS BELOW BEFORE INSTALLATION *****************************************************************************/
 //QUARK PARAMETERS
-const char* TERMINAL    PROGMEM = "DB000001";
-const int   TERMINAL_ID PROGMEM = 1;
+const char* TERMINAL    PROGMEM = "DB000003";
+const int   TERMINAL_ID PROGMEM = 3;
 const char* TERMINAL_PASSWORD  PROGMEM = "123456";
 const char* FIRMWARE_VERSION = "1.0.3"; 
 const char* HARDWARE_VERSION = "1.0.1";

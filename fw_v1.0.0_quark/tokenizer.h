@@ -90,22 +90,12 @@ int coin_change_algorithm(int d[], int n, int k) {
   }
 
   int l = n;
-
-//  for (int ii = 0; ii <= n; ++ii )
-//  {
-    Serial.print("l = ");
-    //char* TOKEN_SYMBOL = internal_tokenizer(d[S[ii]]) ;
-    Serial.println(l);
-   // ii = ii + d[S[ii]];
-//  }
-Serial.print("M[n] = ");
-  Serial.println(M[n]);
   char* inverse_array[M[n]];
   int array_counter = M[n]-1;
   while(l>0) {
   
   
-   //Serial.printf("%d\n",d[S[l]]);
+
    char* TOKEN_SYMBOL = internal_tokenizer(d[S[l]]) ;
    inverse_array[array_counter] = TOKEN_SYMBOL;
    array_counter--;

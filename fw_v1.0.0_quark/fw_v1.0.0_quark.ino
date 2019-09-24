@@ -12,15 +12,15 @@
 #include <ESP8266Ping.h>
 /********************CHANGE THE PARAMS BELOW BEFORE INSTALLATION *****************************************************************************/
 //QUARK PARAMETERS
-const char* TERMINAL    PROGMEM = "DB000003";
-const int   TERMINAL_ID PROGMEM = 3;
-const char* TERMINAL_PASSWORD  PROGMEM = "123456";
+const char* TERMINAL    PROGMEM = "DB000007";
+const int   TERMINAL_ID PROGMEM = 7;
+const char* TERMINAL_PASSWORD  PROGMEM = "2QwPBc8u";
 const char* FIRMWARE_VERSION = "1.0.3"; 
 const char* HARDWARE_VERSION = "1.0.1";
 
 //WIFI CREDENTIALS
-const char* ssid PROGMEM = "Cucian Hebat";
-const char* password PROGMEM = "dobiqueen";
+const char* ssid PROGMEM = "SciFi_2.4Ghz";
+const char* password PROGMEM = "df2019ROUTER";
 const unsigned long wifi_timeout PROGMEM = 10000; // 10 seconds waiting for connecting to wifi
 const unsigned long wifi_reconnect_time PROGMEM = 120000; // 2 min retrying
 unsigned long wifi_last_connected_time = millis();
@@ -31,7 +31,7 @@ bool WIFI_reconnect_flag = false;
 int accumulated_txns_wifi_reconnect = 0;
 bool ACCUMULATED_TXNS = false;
 //DEBUG
-#define SERIALDEBUG 0 //WEBSOCKETS DEBUG. CHANGE VALUE TO 1 TO TURN IN ON
+#define SERIALDEBUG 1 //WEBSOCKETS DEBUG. CHANGE VALUE TO 1 TO TURN IN ON
 #define CASHTRANSACTION 0
 /********************CAUTION: DO NOT CHANGE. *****************************************************************************/
 //WEBSOCKET PARAMETERS
@@ -177,6 +177,17 @@ void loop()
     #endif
   }
 #endif
+  if(oauth_access_token_received == false)
+  {
+    if(WIFI_ACTIVE && INTERNET_ACTIVE)
+    {
+      #if SERIALDEBUG
+        Serial.println("Updating the Bearer token at Boot-up");
+      #endif
+      oauth_bearer_access_token = requestAndExtractOauthToken(TERMINAL, TERMINAL_PASSWORD);
+      oauth_access_token_received = true;
+    }
+  }
 /***********************CHECK CASH TXNS**************************************************************/
   if (incomingFlag)
   {

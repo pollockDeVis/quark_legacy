@@ -13,6 +13,8 @@ const char fingerprint[] PROGMEM = "a8 0e 9c 81 2a a8 e3 0f e8 3b f5 e6 4c 73 7c
 //OAUTH ACCESS CREDENTIALS
 const int client_id_password_grant = 2;
 const char* client_secret_password_grant  PROGMEM = "xj5CtbPW7LNXOE5AvwY7BUGgfjJ0HAH9fA2gBYMe";
+bool oauth_access_token_received = false;
+String oauth_bearer_access_token;
 /****************************************************************************************************************/
 
 
@@ -282,8 +284,8 @@ bool postCashTransaction_internal(String access_token, int token, unsigned long 
   else return false;
 }
 
-
-bool postCashTransaction(int cash, const char* _terminal, const char* _tPassword, unsigned long _UNIXTS) {
+String requestAndExtractOauthToken(const char* _terminal, const char* _tPassword)
+{
   char* receivedString = getOauthToken(_terminal, _tPassword);
   String receivedToken = extractOauthToken(receivedString);
   //oauth parsing fails sometimes. This is a failsafe test // Only repeats it second time
@@ -293,6 +295,12 @@ bool postCashTransaction(int cash, const char* _terminal, const char* _tPassword
     receivedToken = extractOauthToken(receivedString);
     oauthFail = false;
   }
+
+  return receivedToken; 
+}
+
+bool postCashTransaction(int cash, const char* _terminal, const char* _tPassword, unsigned long _UNIXTS) {
+  String receivedToken = oauth_bearer_access_token;
   bool successfulReq = postCashTransaction_internal(receivedToken, cash, _UNIXTS);
 
   if(successfulReq == true) return true;
@@ -301,15 +309,9 @@ bool postCashTransaction(int cash, const char* _terminal, const char* _tPassword
 
 bool patchConfirmTransaction(const char* _terminal, const char* _tPassword, int _WS_txID) // maybe pass in the transaction ID and check inside for match
 {
-  char* receivedString = getOauthToken(_terminal, _tPassword);
-  String receivedToken = extractOauthToken(receivedString);
-  //oauth parsing fails sometimes. This is a failsafe test
-  if(oauthFail)
-  {
-    receivedString = getOauthToken(_terminal, _tPassword);
-    receivedToken = extractOauthToken(receivedString);
-    oauthFail = false;
-  }
+ 
+  String receivedToken = oauth_bearer_access_token;
+
   bool successfulReq = patchTransactionApproval(receivedToken, _WS_txID);
   
   if(successfulReq == true) return true;

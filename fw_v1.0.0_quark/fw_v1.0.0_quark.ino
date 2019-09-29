@@ -10,17 +10,18 @@
 #include <WiFiUdp.h>
 #include <Ticker.h>
 #include <ESP8266Ping.h>
+#include <RingBuf.h>
 /********************CHANGE THE PARAMS BELOW BEFORE INSTALLATION *****************************************************************************/
 //QUARK PARAMETERS
 const char* TERMINAL    PROGMEM = "DB000007";
 const int   TERMINAL_ID PROGMEM = 7;
-const char* TERMINAL_PASSWORD  PROGMEM = "2QwPBc8u";
+const char* TERMINAL_PASSWORD  PROGMEM = "zYpfvaX1";
 const char* FIRMWARE_VERSION = "1.0.3"; 
 const char* HARDWARE_VERSION = "1.0.1";
 
 //WIFI CREDENTIALS
-const char* ssid PROGMEM = "SciFi_2.4Ghz";
-const char* password PROGMEM = "df2019ROUTER";
+const char* ssid PROGMEM = "dobiqueen";
+const char* password PROGMEM = "dobiqueen";
 const unsigned long wifi_timeout PROGMEM = 10000; // 10 seconds waiting for connecting to wifi
 const unsigned long wifi_reconnect_time PROGMEM = 120000; // 2 min retrying
 unsigned long wifi_last_connected_time = millis();
@@ -122,6 +123,8 @@ void event(const char * payload, size_t length)
 
 }
 
+RingBuf<char, 10>rxBuffer; //adding the ring buffer for rx received characters
+
 void setup() 
 {
   USE_SERIAL.begin(9600);
@@ -191,11 +194,16 @@ void loop()
 /***********************CHECK CASH TXNS**************************************************************/
   if (incomingFlag)
   {
-   #ifdef CASHTRANSACTION   
-    checkCashTransaction();
+   #ifdef CASHTRANSACTION  
+    char rxReceivedChar;
+    rxBuffer.pop(rxReceivedChar) ;
+    checkCashTransaction(rxReceivedChar);
    #endif
   }
-    
+  if(rxBuffer.isEmpty())
+  {
+    incomingFlag = false;
+  }
   if(WIFI_ACTIVE == true)
   {
         ///////////////////////////  TIME SYNC ////////////////////////////////////////////////////////
@@ -278,6 +286,7 @@ void checkSerialISR()
 //    #endif
     incomingByte = Serial.read();
     MAIN_SERIAL.println(incomingByte);
+    rxBuffer.push(incomingByte);
     
 #ifdef CASHTRANSACTION     
     incomingFlag = true;
@@ -290,12 +299,12 @@ void checkSerialISR()
 #endif    
   }
 }
-void checkCashTransaction()
+void checkCashTransaction(char rxReceivedChar)
 {
 
-      incomingFlag = false;
+      
 
-    int cashValue = detokenizer(incomingByte);
+    int cashValue = detokenizer(rxReceivedChar);
 
     if(ACCUMULATED_TXNS)     //Check for possible bugs
     {

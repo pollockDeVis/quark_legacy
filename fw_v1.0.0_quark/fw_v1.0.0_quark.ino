@@ -20,8 +20,8 @@ const char* FIRMWARE_VERSION = "1.0.3";
 const char* HARDWARE_VERSION = "1.0.1";
 
 //WIFI CREDENTIALS
-const char* ssid PROGMEM = "dobiqueen";
-const char* password PROGMEM = "dobiqueen";
+const char* ssid PROGMEM = "SciFi_2.4Ghz";
+const char* password PROGMEM = "df2019ROUTER";
 const unsigned long wifi_timeout PROGMEM = 10000; // 10 seconds waiting for connecting to wifi
 const unsigned long wifi_reconnect_time PROGMEM = 120000; // 2 min retrying
 unsigned long wifi_last_connected_time = millis();
@@ -32,7 +32,7 @@ bool WIFI_reconnect_flag = false;
 int accumulated_txns_wifi_reconnect = 0;
 bool ACCUMULATED_TXNS = false;
 //DEBUG
-#define SERIALDEBUG 1 //WEBSOCKETS DEBUG. CHANGE VALUE TO 1 TO TURN IN ON
+#define SERIALDEBUG 0 //WEBSOCKETS DEBUG. CHANGE VALUE TO 1 TO TURN IN ON
 #define CASHTRANSACTION 0
 /********************CAUTION: DO NOT CHANGE. *****************************************************************************/
 //WEBSOCKET PARAMETERS
@@ -123,7 +123,7 @@ void event(const char * payload, size_t length)
 
 }
 
-RingBuf<char, 10>rxBuffer; //adding the ring buffer for rx received characters
+RingBuf<char, 50>rxBuffer; //adding the ring buffer for rx received characters
 
 void setup() 
 {
@@ -160,7 +160,7 @@ void setup()
   lastUpdateTime  = 0;
 #endif
 
-ticker.attach(1, checkSerialISR); //(time in seconds, isrFunction)
+ticker.attach_ms(500, checkSerialISR); //(time in seconds, isrFunction)
 } //end setup
 
 void loop() 

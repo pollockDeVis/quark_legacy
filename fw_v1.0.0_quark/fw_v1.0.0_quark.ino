@@ -10,11 +10,12 @@
 #include <WiFiUdp.h>
 #include <Ticker.h>
 #include <ESP8266Ping.h>
+#include <RingBuf.h>
 /********************CHANGE THE PARAMS BELOW BEFORE INSTALLATION *****************************************************************************/
 //QUARK PARAMETERS
 const char* TERMINAL    PROGMEM = "DB000007";
 const int   TERMINAL_ID PROGMEM = 7;
-const char* TERMINAL_PASSWORD  PROGMEM = "2QwPBc8u";
+const char* TERMINAL_PASSWORD  PROGMEM = "zYpfvaX1";
 const char* FIRMWARE_VERSION = "1.0.3"; 
 const char* HARDWARE_VERSION = "1.0.1";
 
@@ -31,7 +32,7 @@ bool WIFI_reconnect_flag = false;
 int accumulated_txns_wifi_reconnect = 0;
 bool ACCUMULATED_TXNS = false;
 //DEBUG
-#define SERIALDEBUG 1 //WEBSOCKETS DEBUG. CHANGE VALUE TO 1 TO TURN IN ON
+#define SERIALDEBUG 0 //WEBSOCKETS DEBUG. CHANGE VALUE TO 1 TO TURN IN ON
 #define CASHTRANSACTION 0
 /********************CAUTION: DO NOT CHANGE. *****************************************************************************/
 //WEBSOCKET PARAMETERS
@@ -122,6 +123,8 @@ void event(const char * payload, size_t length)
 
 }
 
+RingBuf<char, 50>rxBuffer; //adding the ring buffer for rx received characters
+
 void setup() 
 {
   USE_SERIAL.begin(9600);
@@ -157,7 +160,7 @@ void setup()
   lastUpdateTime  = 0;
 #endif
 
-ticker.attach(1, checkSerialISR); //(time in seconds, isrFunction)
+ticker.attach_ms(500, checkSerialISR); //(time in seconds, isrFunction)
 } //end setup
 
 void loop() 
@@ -191,11 +194,16 @@ void loop()
 /***********************CHECK CASH TXNS**************************************************************/
   if (incomingFlag)
   {
-   #ifdef CASHTRANSACTION   
-    checkCashTransaction();
+   #ifdef CASHTRANSACTION  
+    char rxReceivedChar;
+    rxBuffer.pop(rxReceivedChar) ;
+    checkCashTransaction(rxReceivedChar);
    #endif
   }
-    
+  if(rxBuffer.isEmpty())
+  {
+    incomingFlag = false;
+  }
   if(WIFI_ACTIVE == true)
   {
         ///////////////////////////  TIME SYNC ////////////////////////////////////////////////////////
@@ -278,6 +286,7 @@ void checkSerialISR()
 //    #endif
     incomingByte = Serial.read();
     MAIN_SERIAL.println(incomingByte);
+    rxBuffer.push(incomingByte);
     
 #ifdef CASHTRANSACTION     
     incomingFlag = true;
@@ -290,12 +299,12 @@ void checkSerialISR()
 #endif    
   }
 }
-void checkCashTransaction()
+void checkCashTransaction(char rxReceivedChar)
 {
 
-      incomingFlag = false;
+      
 
-    int cashValue = detokenizer(incomingByte);
+    int cashValue = detokenizer(rxReceivedChar);
 
     if(ACCUMULATED_TXNS)     //Check for possible bugs
     {
